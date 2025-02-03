@@ -7,7 +7,7 @@
 - **File Structure Guidelines:**
   - Export components separately.
   - Organize subcomponents, helpers, static assets, and TypeScript interfaces in distinct files.
-- **Follow Expo’s official documentation** for project setup and configuration:  
+- **Follow Expo's official documentation** for project setup and configuration:  
   [Expo Documentation](https://docs.expo.dev/)
 
 ### Naming Conventions
@@ -27,11 +27,11 @@
 - **Utilize Prettier** for consistent code formatting.
 
 ### UI and Styling
-- **Leverage Expo’s built-in components** for common UI patterns and layouts.
-- **Implement responsive design** using Flexbox and Expo’s `useWindowDimensions` to adjust for various screen sizes.
+- **Leverage Expo's built-in components** for common UI patterns and layouts.
+- **Implement responsive design** using Flexbox and Expo's `useWindowDimensions` to adjust for various screen sizes.
 - **Styling Options:**
   - Use `styled-components` or Tailwind CSS (e.g., via [NativeWind](https://www.nativewind.dev/)) for component styling.
-- **Implement dark mode support** using Expo’s `useColorScheme`.
+- **Implement dark mode support** using Expo's `useColorScheme`.
 - **Ensure high accessibility (a11y) standards:**
   - Use ARIA roles and native accessibility props.
 - **Adopt performant animation and gesture libraries:**
@@ -46,13 +46,13 @@
 ### Performance Optimization
 - **Minimize usage of `useState` and `useEffect`** – favor Context and Reducers for complex state management.
 - **Optimize the app startup:**  
-  - Use Expo’s `AppLoading` and `SplashScreen` for an improved launch experience.
+  - Use Expo's `AppLoading` and `SplashScreen` for an improved launch experience.
 - **Optimize images:**
   - Use the WebP format where supported, include size metadata, and implement lazy loading with `expo-image`.
-- **Implement code splitting and lazy loading** for non-critical components using React’s `Suspense` and dynamic imports.
+- **Implement code splitting and lazy loading** for non-critical components using React's `Suspense` and dynamic imports.
 - **Prevent unnecessary re-renders:**
   - Memoize components and use `useMemo` and `useCallback` judiciously.
-- **Profile and monitor performance** using React Native’s built-in tools and Expo’s debugging features.
+- **Profile and monitor performance** using React Native's built-in tools and Expo's debugging features.
 
 ### Navigation
 - **Utilize `react-navigation`** for routing and navigation; follow best practices for stack, tab, and drawer navigators.
@@ -79,14 +79,14 @@
 ### Testing
 - **Write unit tests** using Jest and React Native Testing Library.
 - **Implement integration tests** for critical user flows with Detox.
-- **Utilize Expo’s testing tools** for running tests across different environments.
+- **Utilize Expo's testing tools** for running tests across different environments.
 - **Consider snapshot testing** for components to ensure UI consistency.
 
 ### Security
 - **Sanitize user inputs** to prevent XSS attacks.
 - **Use `react-native-encrypted-storage`** for securely storing sensitive data.
 - **Ensure secure API communication** using HTTPS and proper authentication.
-- **Follow Expo’s Security Guidelines:**  
+- **Follow Expo's Security Guidelines:**  
   [Expo Security Guidelines](https://docs.expo.dev/guides/security/)
 
 ### Internationalization (i18n)
@@ -112,8 +112,28 @@
    - Test extensively on both iOS and Android to ensure full compatibility.
 
 ### API Documentation
-- **Follow Expo’s official documentation** for project setup and configuration:  
+- **Follow Expo's official documentation** for project setup and configuration:  
   [Expo Documentation](https://docs.expo.dev/)
+
+### Database and Supabase
+- **Use Supabase Branching for Development:**
+  - Create preview branches for testing database changes
+  - Use `supabase db diff` to generate migration files
+  - Test migrations in preview branches before merging to production
+  - Follow the workflow:
+    1. Make local changes
+    2. Generate migration with `supabase db diff -f "description"`
+    3. Test in preview branch
+    4. Merge to production when ready
+- **Database Migration Best Practices:**
+  - Keep migrations sequential and atomic
+  - Use descriptive names for migration files
+  - Test migrations in preview branches
+  - Handle rollbacks gracefully
+- **Seeding Data:**
+  - Maintain `seed.sql` for preview environments
+  - Keep seed data minimal but sufficient for testing
+  - Use consistent test data across environments
 
 ---
 

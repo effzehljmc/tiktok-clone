@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Used for migrations/db push
+  extensions = [uuidOssp(map: "uuid-ossp")]
+}
+
+model User {
+  id        String    @id @default(dbgenerated("uuid_generate_v4()"))
+  email     String    @unique
+  username  String    @unique
+  fullName  String?
+  bio       String?
+  image     String?
+  videos    Video[]
+  likes     Like[]
+  comments  Comment[]
+  followers Follower[] @relation("user_followers")
+  following Follower[] @relation("user_following")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Video {
+  id        String    @id @default(dbgenerated("uuid_generate_v4()"))
+  caption   String?
+  url       String
+  user_id   String
+  user      User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  likes     Like[]
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Like {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()"))
+  user_id       String
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  video_id      String
+  video         Video    @relation(fields: [video_id], references: [id], onDelete: Cascade)
+  video_user_id String
+  created_at    DateTime @default(now())
+
+  @@unique([video_id, user_id])
+}
+
+model Follower {
+  id              String   @id @default(dbgenerated("uuid_generate_v4()"))
+  user_id         String
+  user            User     @relation("user_followers", fields: [user_id], references: [id], onDelete: Cascade)
+  follower_user_id String
+  following_user   User     @relation("user_following", fields: [follower_user_id], references: [id], onDelete: Cascade)
+  created_at      DateTime @default(now())
+
+  @@unique([user_id, follower_user_id])
+}
+
+model Comment {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()"))
+  user_id       String
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  video_id      String
+  video         Video    @relation(fields: [video_id], references: [id], onDelete: Cascade)
+  video_user_id String
+  text          String
+  created_at    DateTime @default(now())
+}
