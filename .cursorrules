@@ -116,24 +116,38 @@
   [Expo Documentation](https://docs.expo.dev/)
 
 ### Database and Supabase
+- **Use Prisma as Primary ORM:**
+  - Enable TypeScript integration with Prisma Client
+  - Follow schema naming conventions:
+    - Use snake_case for database fields
+    - Use PascalCase for model names
+    - Use descriptive relation names
+  - Enable PostgreSQL extensions via preview features
+  - Use UUID as primary key with uuid-ossp extension
+  - Implement cascading deletes where appropriate
+  - Maintain schema in `prisma/schema.prisma`
+
+- **Prisma Best Practices:**
+  - Generate types with `prisma generate`
+  - Use transactions for related operations
+  - Implement proper error handling for database operations
+  - Leverage Prisma Studio for data management
+  - Keep schema changes in version control
+
 - **Use Supabase Branching for Development:**
   - Create preview branches for testing database changes
   - Use `supabase db diff` to generate migration files
-  - Test migrations in preview branches before merging to production
-  - Follow the workflow:
-    1. Make local changes
-    2. Generate migration with `supabase db diff -f "description"`
-    3. Test in preview branch
-    4. Merge to production when ready
-- **Database Migration Best Practices:**
-  - Keep migrations sequential and atomic
-  - Use descriptive names for migration files
-  - Test migrations in preview branches
-  - Handle rollbacks gracefully
-- **Seeding Data:**
-  - Maintain `seed.sql` for preview environments
-  - Keep seed data minimal but sufficient for testing
-  - Use consistent test data across environments
+
+### Database Migration Best Practices:
+- Keep migrations sequential and atomic
+- Use descriptive names for migration files
+- Test migrations in preview branches
+- Handle rollbacks gracefully
+
+### Seeding Data:
+- Maintain `seed.sql` for preview environments
+- Keep seed data minimal but sufficient for testing
+- Use consistent test data across environments
 
 ---
 
