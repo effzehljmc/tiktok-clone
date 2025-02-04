@@ -1,5 +1,6 @@
 import { supabase } from '@/utils/supabase';
 import { useQuery } from '@tanstack/react-query';
+import { useUser } from './useUser';
 
 export interface Video {
   id: string;
@@ -13,18 +14,21 @@ export interface Video {
     username: string;
     avatarUrl?: string;
   };
-  likes: number;
-  comments: number;
-  shares: number;
+  likesCount: number;
+  isLikedByCurrentUser: boolean;
+  commentsCount: number;
+  viewsCount: number;
   isPrivate: boolean;
   status: 'PROCESSING' | 'PUBLISHED' | 'FAILED';
 }
 
 export function useVideos() {
+  const { user } = useUser();
+
   return useQuery<Video[]>({
-    queryKey: ['videos'],
+    queryKey: ['videos', user?.id],
     queryFn: async () => {
-      // Berechne Timestamp für 24 Stunden zurück
+      // Calculate timestamp for last 24 hours
       const last24Hours = new Date();
       last24Hours.setHours(last24Hours.getHours() - 24);
 
@@ -32,7 +36,8 @@ export function useVideos() {
         .from('videos')
         .select(`
           *,
-          creator:User(id, username, image)
+          creator:User(id, username, image),
+          likes(user_id)
         `)
         .eq('status', 'PUBLISHED')
         .eq('is_private', false)
@@ -56,9 +61,10 @@ export function useVideos() {
           username: video.creator.username,
           avatarUrl: video.creator.image,
         },
-        likes: video.likes_count || 0,
-        comments: video.comments_count || 0,
-        shares: video.views_count || 0,
+        likesCount: video.likes_count || 0,
+        isLikedByCurrentUser: user ? video.likes.some((like: any) => like.user_id === user.id) : false,
+        commentsCount: video.comments_count || 0,
+        viewsCount: video.views_count || 0,
         isPrivate: video.is_private,
         status: video.status,
       })) || [];

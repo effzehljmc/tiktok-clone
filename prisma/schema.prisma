@@ -24,6 +24,7 @@ model User {
   followers Follower[] @relation("user_followers")
   likes     Like[]
   videos    Video[]
+  metrics   VideoMetrics[]
 }
 
 model Video {
@@ -45,6 +46,7 @@ model Video {
   updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
   comments      Comment[]
   likes         Like[]
+  metrics       VideoMetrics[]
   creator       User           @relation(fields: [creatorId], references: [id])
 
   @@index([creatorId])
@@ -87,6 +89,25 @@ model Comment {
 
   @@index([videoId])
   @@map("comments")
+}
+
+model VideoMetrics {
+  id                    String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  videoId              String   @map("video_id") @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  watchedSeconds       Int      @default(0) @map("watched_seconds")
+  watchedAt            DateTime @default(now()) @map("watched_at") @db.Timestamptz(6)
+  lastPosition         Int      @default(0) @map("last_position")
+  completed            Boolean  @default(false)
+  replayCount          Int      @default(0) @map("replay_count")
+  averageWatchPercent  Float    @default(0) @map("average_watch_percent")
+  video                Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([videoId])
+  @@index([userId])
+  @@map("video_metrics")
 }
 
 enum VideoStatus {

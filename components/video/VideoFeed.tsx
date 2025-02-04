@@ -1,17 +1,81 @@
-import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity, StatusBar } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
+import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity, StatusBar, Platform } from 'react-native';
+import { Video as ExpoVideo, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { useVideos, Video as VideoType } from '../../hooks/useVideos';
+import { useVideoMetrics } from '../../hooks/useVideoMetrics';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { VideoOverlay } from './VideoOverlay';
 
 export function VideoFeed() {
   const { data: videos, isLoading } = useVideos();
+  const { trackVideoMetrics } = useVideoMetrics();
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [videoStatus, setVideoStatus] = useState<{ [key: string]: AVPlaybackStatus }>({});
   const windowHeight = Dimensions.get('window').height;
-  const videoRefs = useRef<{ [key: string]: Video | null }>({});
+  const videoRefs = useRef<{ [key: string]: ExpoVideo | null }>({});
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#000',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    flatListContent: {
+      flexGrow: 1,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#000',
+    },
+    videoContainer: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: '#000',
+    },
+    video: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
+    },
+    overlay: {
+      position: 'absolute',
+      bottom: Platform.OS === 'ios' ? insets.bottom + 70 : 70,
+      left: 20,
+      right: 20,
+      padding: 10,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      borderRadius: 8,
+      marginBottom: 10,
+    },
+    title: {
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    username: {
+      color: 'white',
+      marginTop: 4,
+      fontSize: 14,
+    },
+    playPauseButton: {
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: [{ translateX: -25 }, { translateY: -25 }],
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      borderRadius: 30,
+      padding: 10,
+    },
+  });
 
   useEffect(() => {
     // StatusBar transparent und durchschimmernd machen
@@ -74,7 +138,7 @@ export function VideoFeed() {
 
   const renderItem = useCallback(({ item, index }: ListRenderItemInfo<VideoType>) => (
     <View style={[styles.videoContainer, { height: windowHeight }]}>
-      <Video
+      <ExpoVideo
         ref={(ref) => videoRefs.current[item.id] = ref}
         source={{ uri: item.url }}
         posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
@@ -87,10 +151,16 @@ export function VideoFeed() {
           console.error(`Video playback error for ${item.title}:`, error);
         }}
         onPlaybackStatusUpdate={(status) => {
+          const prevStatus = videoStatus[item.id];
           setVideoStatus(prev => ({
             ...prev,
             [item.id]: status
           }));
+          
+          // Track metrics when status changes
+          if (status.isLoaded) {
+            trackVideoMetrics(item.id, status, prevStatus);
+          }
         }}
         progressUpdateIntervalMillis={500}
         shouldCorrectPitch={false}
@@ -98,10 +168,7 @@ export function VideoFeed() {
         volume={1.0}
         rate={1.0}
       />
-      <View style={styles.overlay}>
-        <Text style={styles.title}>{item.caption || item.title}</Text>
-        <Text style={styles.username}>@{item.creator.username}</Text>
-      </View>
+      <VideoOverlay video={item} bottomInset={insets.bottom} />
       <TouchableOpacity 
         style={styles.playPauseButton}
         onPress={() => handlePlayPause(item.id)}
@@ -113,7 +180,7 @@ export function VideoFeed() {
         />
       </TouchableOpacity>
     </View>
-  ), [activeVideoIndex, windowHeight, videoStatus, handlePlayPause]);
+  ), [activeVideoIndex, windowHeight, videoStatus, handlePlayPause, insets.bottom, trackVideoMetrics]);
 
   if (isLoading) {
     return (
@@ -158,64 +225,4 @@ export function VideoFeed() {
       />
     </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  flatListContent: {
-    flexGrow: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000',
-  },
-  videoContainer: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#000',
-  },
-  video: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    position: 'absolute',
-    bottom: 90, // Adjusted to be above tab bar
-    left: 20,
-    right: 20,
-    padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  title: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  username: {
-    color: 'white',
-    marginTop: 4,
-    fontSize: 14,
-  },
-  playPauseButton: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -25 }, { translateY: -25 }],
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 30,
-    padding: 10,
-  },
-}); 
+} 

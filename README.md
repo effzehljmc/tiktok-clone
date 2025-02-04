@@ -52,3 +52,49 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 
 ## License
 MIT
+
+## Video Metrics System
+
+The app includes a comprehensive video metrics tracking system that collects engagement data for the recommendation algorithm:
+
+### Tracked Metrics
+- **Views**: Counts unique views per user session
+- **Watch Time**: Tracks seconds watched per video
+- **Completion Rate**: Marks videos as completed when 90% watched
+- **Replay Count**: Tracks how many times a user replays a video
+- **Average Watch Percentage**: Calculates the average percentage watched across replays
+- **Last Position**: Stores the last playback position for resume functionality
+
+### Technical Implementation
+- Uses Prisma for database schema and migrations
+- Implements RPC functions for atomic view counting
+- Batches updates to reduce database load
+- Includes retry logic for failed updates
+- Maintains session-based view tracking
+
+### Database Structure
+```prisma
+model VideoMetrics {
+  id                   String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  videoId             String   @map("video_id") @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  watchedSeconds      Int      @default(0)
+  watchedAt           DateTime @default(now())
+  lastPosition        Int      @default(0)
+  completed           Boolean  @default(false)
+  replayCount         Int      @default(0)
+  averageWatchPercent Float    @default(0)
+  // ... relations and indexes
+}
+```
+
+### Usage
+The metrics system automatically tracks user engagement through the `useVideoMetrics` hook:
+```typescript
+const { trackVideoMetrics } = useVideoMetrics();
+
+// In video component
+onPlaybackStatusUpdate={(status) => {
+  trackVideoMetrics(videoId, status, prevStatus);
+}}
+```
