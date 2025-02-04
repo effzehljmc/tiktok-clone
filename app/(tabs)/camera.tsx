@@ -1,11 +1,12 @@
 import { View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CameraScreen() {
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Text className="text-xl font-bold text-gray-800">
-        Camera Screen
-      </Text>
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ padding: 16 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Camera</Text>
+      </View>
+    </SafeAreaView>
   );
 } 
