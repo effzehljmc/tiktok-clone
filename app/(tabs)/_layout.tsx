@@ -3,9 +3,15 @@ import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Platform, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+
+  if (!user) {
+    return null;
+  }
   
   return (
     <Tabs
@@ -47,7 +53,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: 'Profile',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
@@ -59,15 +65,6 @@ export default function TabLayout() {
           title: 'Inbox',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="mail" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="camera"
-        options={{
-          title: 'Camera',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="camera" size={size} color={color} />
           ),
         }}
       />

@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity, StatusBar, Platform } from 'react-native';
+import { Share } from 'react-native';
 import { Video as ExpoVideo, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { useVideos, Video as VideoType } from '../../hooks/useVideos';
 import { useVideoMetrics } from '../../hooks/useVideoMetrics';
@@ -6,6 +6,9 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VideoOverlay } from './VideoOverlay';
+import { useRouter } from 'expo-router';
+import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity, StatusBar, Platform } from 'react-native';
+import Header from '../header';
 
 export function VideoFeed() {
   const { data: videos, isLoading } = useVideos();
@@ -16,6 +19,7 @@ export function VideoFeed() {
   const videoRefs = useRef<{ [key: string]: ExpoVideo | null }>({});
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const styles = StyleSheet.create({
     container: {
@@ -136,6 +140,31 @@ export function VideoFeed() {
     }
   }, [activeVideoIndex, windowHeight]);
 
+  const handleShare = useCallback(async (video: VideoType) => {
+    try {
+      await Share.share({
+        message: `Check out this video by @${video.creator.username}!`,
+        url: video.url
+      });
+    } catch (error) {
+      console.error('Error sharing video:', error);
+    }
+  }, []);
+
+  const handleCommentPress = useCallback((videoId: string) => {
+    router.push({
+      pathname: "/comments",
+      params: { videoId }
+    });
+  }, [router]);
+
+  const handleProfilePress = useCallback((creatorId: string) => {
+    router.push({
+      pathname: "/(tabs)/profile",
+      params: { userId: creatorId }
+    } as any); // TODO: Remove 'as any' when proper type definitions are added
+  }, [router]);
+
   const renderItem = useCallback(({ item, index }: ListRenderItemInfo<VideoType>) => (
     <View style={[styles.videoContainer, { height: windowHeight }]}>
       <ExpoVideo
@@ -157,10 +186,10 @@ export function VideoFeed() {
             [item.id]: status
           }));
           
-          // Track metrics when status changes
-          if (status.isLoaded) {
-            trackVideoMetrics(item.id, status, prevStatus);
-          }
+          // Temporarily disable metrics tracking
+          // if (status.isLoaded) {
+          //   trackVideoMetrics(item.id, status, prevStatus);
+          // }
         }}
         progressUpdateIntervalMillis={500}
         shouldCorrectPitch={false}
@@ -168,7 +197,13 @@ export function VideoFeed() {
         volume={1.0}
         rate={1.0}
       />
-      <VideoOverlay video={item} bottomInset={insets.bottom} />
+      <VideoOverlay 
+        video={item} 
+        bottomInset={insets.bottom}
+        onShare={() => handleShare(item)}
+        onCommentPress={() => handleCommentPress(item.id)}
+        onProfilePress={() => handleProfilePress(item.creator.id)}
+      />
       <TouchableOpacity 
         style={styles.playPauseButton}
         onPress={() => handlePlayPause(item.id)}
@@ -180,7 +215,7 @@ export function VideoFeed() {
         />
       </TouchableOpacity>
     </View>
-  ), [activeVideoIndex, windowHeight, videoStatus, handlePlayPause, insets.bottom, trackVideoMetrics]);
+  ), [activeVideoIndex, windowHeight, videoStatus, handlePlayPause, handleShare, handleCommentPress, handleProfilePress]);
 
   if (isLoading) {
     return (
@@ -200,6 +235,7 @@ export function VideoFeed() {
 
   return (
     <View style={styles.container}>
+      <Header color="white" />
       <FlatList
         ref={flatListRef}
         data={videos}

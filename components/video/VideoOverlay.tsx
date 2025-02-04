@@ -1,15 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { LikeButton } from './LikeButton';
 import { Video } from '../../hooks/useVideos';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 
 interface VideoOverlayProps {
   video: Video;
   bottomInset: number;
+  onShare?: () => void;
+  onCommentPress?: () => void;
+  onProfilePress?: () => void;
 }
 
-export function VideoOverlay({ video, bottomInset }: VideoOverlayProps) {
+export function VideoOverlay({ 
+  video, 
+  bottomInset,
+  onShare,
+  onCommentPress,
+  onProfilePress 
+}: VideoOverlayProps) {
   return (
     <>
       {/* Video Info */}
@@ -34,6 +45,7 @@ export function VideoOverlay({ video, bottomInset }: VideoOverlayProps) {
           { bottom: Platform.OS === 'ios' ? bottomInset + 100 : 100 }
         ]}
       >
+        {/* Like Button */}
         <View style={styles.interactionItem}>
           <LikeButton
             videoId={video.id}
@@ -45,6 +57,35 @@ export function VideoOverlay({ video, bottomInset }: VideoOverlayProps) {
             {video.likesCount.toLocaleString()}
           </Text>
         </View>
+
+        {/* Comments Button */}
+        <TouchableOpacity style={styles.interactionItem} onPress={onCommentPress}>
+          <MaterialCommunityIcons name="comment-outline" size={35} color="white" />
+          <Text style={styles.interactionCount}>
+            {video.commentsCount?.toLocaleString() || '0'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Share Button */}
+        <TouchableOpacity style={styles.interactionItem} onPress={onShare}>
+          <MaterialCommunityIcons name="share" size={35} color="white" />
+          <Text style={styles.interactionCount}>Share</Text>
+        </TouchableOpacity>
+
+        {/* Profile Button */}
+        <TouchableOpacity style={styles.interactionItem} onPress={onProfilePress}>
+          {video.creator.avatarUrl ? (
+            <Image
+              source={video.creator.avatarUrl}
+              style={styles.profileImage}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <FontAwesome name="user-circle-o" size={35} color="white" />
+          )}
+          <Text style={styles.interactionCount}>Profile</Text>
+        </TouchableOpacity>
       </Animated.View>
     </>
   );
@@ -88,5 +129,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 3,
     fontWeight: '600',
+  },
+  profileImage: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    backgroundColor: '#f0f0f0',
   },
 }); 

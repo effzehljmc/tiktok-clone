@@ -6,20 +6,15 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
-import { checkAuth } from '../utils/auth-hooks';
-import { AuthProvider } from '../contexts/AuthContext';
+import { AuthProvider } from '@/hooks/useAuth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StyleSheet } from 'react-native';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // Data is fresh for 5 minutes
-      gcTime: 1000 * 60 * 30, // Cache is kept for 30 minutes
-      retry: 2,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -35,24 +30,39 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
   if (!loaded) {
     return null;
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Stack>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </AuthProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <BottomSheetModalProvider>
+              <Stack>
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen 
+                  name="comments" 
+                  options={{
+                    headerShown: false,
+                    contentStyle: { 
+                      backgroundColor: 'transparent'
+                    }
+                  }}
+                />
+              </Stack>
+            </BottomSheetModalProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

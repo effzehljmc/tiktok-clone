@@ -1,3 +1,4 @@
+import React from 'react';
 # TikTok Clone
 
 A modern TikTok clone built with Expo, React Native, and TypeScript.
@@ -11,6 +12,8 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 - ✅ Video descriptions and user information overlay
 - ✅ Proper video state management (pause other videos when scrolling)
 - ✅ Performance optimizations (video preloading, recycling)
+- ✅ Header with back and search functionality
+- ✅ Search overlay with modern UI
 
 ## Getting Started
 
