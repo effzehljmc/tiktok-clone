@@ -1,51 +1,54 @@
-# Welcome to your Expo app 👋
+# TikTok Clone
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern TikTok clone built with Expo, React Native, and TypeScript.
 
-## Get started
+## Features Implemented
+
+### Video Feed
+- ✅ Vertical scrolling video feed with snap functionality
+- ✅ Auto-play videos when in view
+- ✅ Custom play/pause controls
+- ✅ Video descriptions and user information overlay
+- ✅ Proper video state management (pause other videos when scrolling)
+- ✅ Performance optimizations (video preloading, recycling)
+
+## Getting Started
 
 1. Install dependencies
-
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. Start the development server
    ```bash
-    npx expo start
+   npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+## Tech Stack
+- Expo
+- React Native
+- TypeScript
+- expo-av for video playback
+- Supabase for backend and storage
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Development Progress
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Current Branch: feature/video-feed
+- Implemented core video feed functionality
+- Added video playback controls
+- Optimized scroll performance and video loading
+- Fixed layout issues with status bar and tab bar
 
-## Get a fresh project
+## Next Steps
+- Implement video upload functionality
+- Add user authentication
+- Implement comments and likes
+- Add user profiles
 
-When you're ready, run:
+## Contributing
+1. Create a feature branch
+2. Make your changes
+3. Submit a pull request
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# tiktok-clone
+## License
+MIT

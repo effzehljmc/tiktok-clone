@@ -145,31 +145,39 @@ async function checkNetworkConnection(): Promise<boolean> {
 async function ensureUserRecord(session: any): Promise<void> {
   try {
     // First check if user record exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: checkError } = await supabase
       .from('User')
       .select()
       .eq('id', session.user.id)
       .single();
 
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" error
+      console.error('Error checking for existing user:', checkError);
+      return;
+    }
+
     if (!existingUser) {
       console.log('Creating missing user record for:', session.user.email);
       // Create user record from auth data
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('User')
         .insert([
           {
             id: session.user.id,
             email: session.user.email,
-            username: session.user.email.split('@')[0], // Default username from email
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            username: session.user.user_metadata?.username || session.user.email.split('@')[0], // Use stored username if available
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           },
-        ])
-        .select()
-        .single();
+        ]);
 
-      if (error) throw error;
+      if (insertError) {
+        console.error('Error creating user record:', insertError);
+        return;
+      }
       console.log('User record created successfully');
+    } else {
+      console.log('User record already exists:', existingUser.email);
     }
   } catch (error) {
     console.error('Error ensuring user record:', error);

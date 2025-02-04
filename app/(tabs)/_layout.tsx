@@ -4,51 +4,65 @@ import { Tabs } from 'expo-router';
 export default function TabLayout() {
   return (
     <Tabs
-      screenOptions={({ route }) => ({
-        tabBarActiveTintColor: '#000',
-        tabBarInactiveTintColor: '#888',
+      screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          height: 60,
-          paddingBottom: 10,
-          paddingTop: 10,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-        },
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName = '';
-
-          if (route.name === 'index') {
-            iconName = focused ? 'home-sharp' : 'home-outline';
-          } else if (route.name === 'friends') {
-            iconName = focused ? 'people-sharp' : 'people-outline';
-          } else if (route.name === 'camera') {
-            iconName = 'camera';
-            size = size + 10; // Make camera icon larger
-          } else if (route.name === 'inbox') {
-            iconName = focused ? 'mail-sharp' : 'mail-outline';
-          } else if (route.name === 'profile') {
-            iconName = focused ? 'person-sharp' : 'person-outline';
-          }
-
-          return <Ionicons name={iconName as any} size={size} color={color} />;
-        },
-      })}
-    >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
-      <Tabs.Screen 
-        name="camera" 
-        options={{ 
-          title: '',
-          tabBarIconStyle: {
-            marginTop: 5,
-          },
-        }} 
+        tabBarActiveTintColor: '#000',
+        tabBarInactiveTintColor: '#666',
+      }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Feed',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
       />
-      <Tabs.Screen name="inbox" options={{ title: 'Inbox' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="inbox"
+        options={{
+          title: 'Inbox',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="mail" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="camera"
+        options={{
+          title: 'Camera',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="camera" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: 'Explore',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: 'Friends',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

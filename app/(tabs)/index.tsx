@@ -1,13 +1,12 @@
-import { Image, StyleSheet, Platform } from 'react-native';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { VideoFeed } from '@/components/video/VideoFeed';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function HomeScreen() {
+export default function FeedScreen() {
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Text className="text-xl font-bold text-gray-800">
-        Welcome to Home Screen
-      </Text>
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <VideoFeed />
+    </SafeAreaView>
   );
 }
 
