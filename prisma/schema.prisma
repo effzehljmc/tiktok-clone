@@ -1,71 +1,92 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Used for migrations/db push
-  extensions = [uuidOssp(map: "uuid-ossp")]
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [uuid_ossp(map: "uuid-ossp")]
 }
 
 model User {
-  id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email     String    @unique
-  username  String    @unique
+  id        String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email     String     @unique
+  username  String     @unique
   fullName  String?
   bio       String?
   image     String?
-  videos    Video[]
-  likes     Like[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   comments  Comment[]
-  followers Follower[] @relation("user_followers")
   following Follower[] @relation("user_following")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  followers Follower[] @relation("user_followers")
+  likes     Like[]
+  videos    Video[]
 }
 
 model Video {
-  id          String   @id @default(uuid()) @db.Uuid
-  title       String
-  description String?
-  videoUrl    String   @map("video_url")
-  thumbnailUrl String? @map("thumbnail_url")
-  duration    Int?     // Länge in Sekunden
-  
-  // Zähler
-  viewsCount     Int     @default(0) @map("views_count")
-  likesCount     Int     @default(0) @map("likes_count")
-  commentsCount  Int     @default(0) @map("comments_count")
-  
-  // Status und Sichtbarkeit
-  status     VideoStatus @default(PROCESSING)
-  isPrivate  Boolean     @default(false) @map("is_private")
-  
-  // Beziehungen
-  creator    User     @relation(fields: [creatorId], references: [id])
-  creatorId  String   @map("creator_id") @db.Uuid
-  likes      Like[]
-  comments   Comment[]
-  
-  // Metadaten
-  category   VideoCategory?
-  tags       String[]
-  
-  // Timestamps
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  id            String         @id @default(uuid()) @db.Uuid
+  title         String
+  description   String?
+  videoUrl      String         @map("video_url")
+  thumbnailUrl  String?        @map("thumbnail_url")
+  duration      Int?
+  viewsCount    Int            @default(0) @map("views_count")
+  likesCount    Int            @default(0) @map("likes_count")
+  commentsCount Int            @default(0) @map("comments_count")
+  status        VideoStatus    @default(PROCESSING)
+  isPrivate     Boolean        @default(false) @map("is_private")
+  creatorId     String         @map("creator_id") @db.Uuid
+  category      VideoCategory?
+  tags          String[]
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  comments      Comment[]
+  likes         Like[]
+  creator       User           @relation(fields: [creatorId], references: [id])
 
-  @@map("videos")
   @@index([creatorId])
   @@index([createdAt(sort: Desc)])
+  @@map("videos")
+}
+
+model Like {
+  id        String   @id @default(uuid()) @db.Uuid
+  videoId   String   @map("video_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@map("likes")
+}
+
+model Follower {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId         String   @db.Uuid
+  followerUserId String   @db.Uuid
+  createdAt      DateTime @default(now())
+  followingUser  User     @relation("user_following", fields: [followerUserId], references: [id], onDelete: Cascade)
+  user           User     @relation("user_followers", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, followerUserId])
+  @@map("followers")
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  text      String
+  videoId   String   @map("video_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([videoId])
+  @@map("comments")
 }
 
 enum VideoStatus {
@@ -80,41 +101,4 @@ enum VideoCategory {
   EDUCATION
   ENTERTAINMENT
   SPORTS
-}
-
-model Like {
-  id        String   @id @default(uuid()) @db.Uuid
-  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
-  videoId   String   @map("video_id") @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String   @map("user_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-
-  @@unique([userId, videoId])
-  @@map("likes")
-}
-
-model Follower {
-  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  userId         String   @db.Uuid
-  user           User     @relation("user_followers", fields: [userId], references: [id], onDelete: Cascade)
-  followerUserId String   @db.Uuid
-  followingUser  User     @relation("user_following", fields: [followerUserId], references: [id], onDelete: Cascade)
-  createdAt      DateTime @default(now())
-
-  @@unique([userId, followerUserId])
-  @@map("followers")
-}
-
-model Comment {
-  id        String   @id @default(uuid()) @db.Uuid
-  text      String
-  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
-  videoId   String   @map("video_id") @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String   @map("user_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-
-  @@map("comments")
-  @@index([videoId])
 }

@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity, StatusBar } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { useVideos, Video as VideoType } from '../../hooks/useVideos';
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -12,6 +12,19 @@ export function VideoFeed() {
   const windowHeight = Dimensions.get('window').height;
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    // StatusBar transparent und durchschimmernd machen
+    StatusBar.setTranslucent(true);
+    StatusBar.setBackgroundColor('transparent');
+    StatusBar.setBarStyle('light-content');
+
+    // Optional: Cleanup wenn gewünscht
+    return () => {
+      // Hier könnten wir die StatusBar zurücksetzen, wenn der VideoFeed unmountet
+      // In diesem Fall lassen wir sie aber transparent
+    };
+  }, []);
 
   // Effect to pause other videos when active index changes
   useEffect(() => {
@@ -151,6 +164,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   flatListContent: {
     flexGrow: 1,
@@ -159,6 +177,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#000',
   },
   videoContainer: {
     width: '100%',
