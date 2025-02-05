@@ -1,7 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { useUser } from './useUser';
-import { RealtimeChannel } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from "uuid";
 import "react-native-get-random-values";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,27 +15,10 @@ export function useLike({ videoId, initialLikeCount, initialIsLiked }: UseLikePr
   const { user } = useUser();
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
-  const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
-
-  // Fetch current like count
-  const fetchLikeCount = async () => {
-    const { data } = await supabase
-      .from('videos')
-      .select('likes_count')
-      .eq('id', videoId)
-      .single();
-    
-    if (data) {
-      setLikeCount(data.likes_count);
-    }
-  };
 
   // Subscribe to real-time updates
   useEffect(() => {
-    // Get initial count
-    fetchLikeCount();
-
     const channel = supabase
       .channel(`likes:${videoId}`)
       .on(
@@ -47,8 +29,18 @@ export function useLike({ videoId, initialLikeCount, initialIsLiked }: UseLikePr
           table: 'likes',
           filter: `video_id=eq.${videoId}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['videos'] });
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setLikeCount(prev => prev + 1);
+            if (payload.new.user_id === user?.id) {
+              setIsLiked(true);
+            }
+          } else if (payload.eventType === 'DELETE') {
+            setLikeCount(prev => Math.max(0, prev - 1));
+            if (payload.old.user_id === user?.id) {
+              setIsLiked(false);
+            }
+          }
         }
       )
       .subscribe();
@@ -56,33 +48,13 @@ export function useLike({ videoId, initialLikeCount, initialIsLiked }: UseLikePr
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [videoId, queryClient]);
+  }, [videoId, user?.id]);
 
-  const toggleLike = useCallback(async () => {
-    if (!user || isLoading) return;
-    
-    setIsLoading(true);
-    const wasLiked = isLiked;
-    
-    // Optimistic update
-    setIsLiked(!wasLiked);
-    setLikeCount(prev => prev + (wasLiked ? -1 : 1));
-    
-    try {
-      if (!wasLiked) {
-        // First check if the like already exists
-        const { data: existingLike } = await supabase
-          .from('likes')
-          .select('id')
-          .match({ video_id: videoId, user_id: user.id })
-          .single();
-
-        if (existingLike) {
-          // Like already exists, we're already in the correct state
-          return;
-        }
-
-        // Try to insert the like
+  const likeMutation = useMutation({
+    mutationFn: async (shouldLike: boolean) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      if (shouldLike) {
         const { error } = await supabase
           .from('likes')
           .insert([{ 
@@ -90,33 +62,60 @@ export function useLike({ videoId, initialLikeCount, initialIsLiked }: UseLikePr
             video_id: videoId, 
             user_id: user.id 
           }]);
-        
         if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['videos'] });
       } else {
-        // Try to remove the like
         const { error } = await supabase
           .from('likes')
           .delete()
           .match({ video_id: videoId, user_id: user.id });
-        
         if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['videos'] });
       }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      // Revert optimistic update on error
-      setIsLiked(wasLiked);
-      setLikeCount(prev => prev + (wasLiked ? 1 : -1));
-    } finally {
-      setIsLoading(false);
+    },
+    onMutate: async (shouldLike) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['videos'] });
+
+      // Snapshot the previous value
+      const previousLiked = isLiked;
+      const previousCount = likeCount;
+
+      // Optimistically update
+      setIsLiked(shouldLike);
+      setLikeCount(prev => prev + (shouldLike ? 1 : -1));
+
+      // Return context with the snapshotted value
+      return { previousLiked, previousCount };
+    },
+    onError: (err, _, context) => {
+      // Revert the optimistic update on error
+      if (context) {
+        setIsLiked(context.previousLiked);
+        setLikeCount(context.previousCount);
+      }
+      console.error('Error toggling like:', err);
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
     }
-  }, [isLiked, isLoading, user, videoId, queryClient]);
+  });
+
+  const toggleLike = useCallback(async () => {
+    if (!user) return;
+    
+    // Optimistically update UI immediately
+    const newIsLiked = !isLiked;
+    setIsLiked(newIsLiked);
+    setLikeCount(prev => prev + (newIsLiked ? 1 : -1));
+    
+    // Then trigger the mutation
+    likeMutation.mutate(newIsLiked);
+  }, [user, isLiked, likeMutation]);
 
   return {
     isLiked,
     likeCount,
     toggleLike,
-    isLoading
+    isLoading: likeMutation.isPending
   };
 } 
