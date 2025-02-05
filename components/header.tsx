@@ -6,7 +6,12 @@ import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SearchOverlay from './search-overlay';
 
-export default function Header({ color }: { color: string }) {
+interface HeaderProps {
+  color: string;
+  showBackButton?: boolean;
+}
+
+export default function Header({ color, showBackButton = false }: HeaderProps) {
   const router = useRouter();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const insets = useSafeAreaInsets();
@@ -25,9 +30,13 @@ export default function Header({ color }: { color: string }) {
       }}
     >
       <View className="flex-row items-center justify-between px-4 py-2">
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="white" />
-        </TouchableOpacity>
+        {showBackButton ? (
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={28} color="white" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 28 }} />
+        )}
         <TouchableOpacity onPress={() => setIsSearchVisible(true)}>
           <Ionicons name="search" size={28} color="white" />
         </TouchableOpacity>

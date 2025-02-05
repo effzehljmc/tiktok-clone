@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -47,12 +48,15 @@ export default function RootLayout() {
                   name="comments" 
                   options={{
                     headerShown: false,
+                    presentation: 'transparentModal',
+                    animation: 'fade',
                     contentStyle: { 
                       backgroundColor: 'transparent'
                     }
                   }}
                 />
               </Stack>
+              <Toast />
             </BottomSheetModalProvider>
           </AuthProvider>
         </QueryClientProvider>

@@ -12,8 +12,17 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 - ✅ Video descriptions and user information overlay
 - ✅ Proper video state management (pause other videos when scrolling)
 - ✅ Performance optimizations (video preloading, recycling)
-- ✅ Header with back and search functionality
+- ✅ Header with contextual back button and search functionality
 - ✅ Search overlay with modern UI
+
+### Comments System
+- ✅ Modal comments view with smooth animations
+- ✅ Real-time comment updates
+- ✅ Optimistic updates for better UX
+- ✅ Comment count tracking
+- ✅ Proper error handling and retry mechanisms
+- ✅ Pull-to-refresh functionality
+- ✅ Keyboard-aware input handling
 
 ## Getting Started
 
@@ -33,19 +42,23 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 - TypeScript
 - expo-av for video playback
 - Supabase for backend and storage
+- Prisma for database management
+- React Query for data fetching
+- React Native Reanimated for animations
 
 ## Development Progress
 
-### Current Branch: feature/video-feed
-- Implemented core video feed functionality
-- Added video playback controls
-- Optimized scroll performance and video loading
-- Fixed layout issues with status bar and tab bar
+### Current Branch: feature/comments-system
+- Implemented comments system with real-time updates
+- Added smooth modal transitions
+- Fixed UUID generation for comments
+- Improved navigation and back button behavior
+- Enhanced error handling and user feedback
 
 ## Next Steps
 - Implement video upload functionality
 - Add user authentication
-- Implement comments and likes
+- Implement likes system
 - Add user profiles
 
 ## Contributing

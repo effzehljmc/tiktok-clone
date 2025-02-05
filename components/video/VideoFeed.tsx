@@ -235,7 +235,7 @@ export function VideoFeed() {
 
   return (
     <View style={styles.container}>
-      <Header color="white" />
+      <Header color="white" showBackButton={false} />
       <FlatList
         ref={flatListRef}
         data={videos}
