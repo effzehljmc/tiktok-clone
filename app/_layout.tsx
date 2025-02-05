@@ -55,6 +55,13 @@ export default function RootLayout() {
                     }
                   }}
                 />
+                <Stack.Screen 
+                  name="creator-profile" 
+                  options={{
+                    headerShown: false,
+                    presentation: 'card'
+                  }}
+                />
               </Stack>
               <Toast />
             </BottomSheetModalProvider>

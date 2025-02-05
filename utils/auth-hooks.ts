@@ -22,8 +22,8 @@ export async function createUserAfterSignUp(
           id: id,
           email,
           username,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
       ])
       .select()
@@ -49,13 +49,14 @@ export async function handleSignUp(
 ): Promise<AuthResponse> {
   try {
     // First check if username is already taken
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: checkError } = await supabase
       .from('User')
       .select('username')
       .eq('username', username)
       .single();
 
-    if (existingUser) {
+    // Only treat it as an existing user if we got actual data back
+    if (existingUser && !checkError) {
       return {
         error: {
           name: 'UsernameExists',
@@ -71,29 +72,58 @@ export async function handleSignUp(
       options: {
         data: {
           username,
-          pending_user_record: true // Flag to indicate we need to create user record
+          pending_user_record: true
         }
       }
     })
 
     if (signUpError) throw signUpError
 
-    if (user) {
-      // Store the user info in AsyncStorage for later
-      await AsyncStorage.setItem('pendingUser', JSON.stringify({
-        email,
-        id: user.id,
-        username
-      }));
-
-      router.replace('/');
-      return { 
-        error: null, 
-        message: 'Please check your email for verification. You will be able to use the app after verifying your email.' 
-      };
+    if (!user) {
+      return {
+        error: {
+          name: 'SignUpError',
+          message: 'Failed to create user account. Please try again.'
+        } as AuthError
+      }
     }
 
-    return { error: null }
+    // Immediately create the user record
+    const { error: createError } = await supabase
+      .from('User')
+      .insert([
+        {
+          id: user.id,
+          email,
+          username,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      ])
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating user record:', createError);
+      return {
+        error: {
+          name: 'DatabaseError',
+          message: 'Account created but failed to set up user profile. Please contact support.'
+        } as AuthError
+      }
+    }
+
+    // Store the user info in AsyncStorage for later
+    await AsyncStorage.setItem('pendingUser', JSON.stringify({
+      email,
+      id: user.id,
+      username
+    }));
+
+    return { 
+      error: null, 
+      message: 'Please check your email for verification. You will be able to use the app after verifying your email.' 
+    };
   } catch (error) {
     console.error('Error in signup process:', error)
     return { error: error as AuthError }
@@ -166,8 +196,8 @@ async function ensureUserRecord(session: any): Promise<void> {
             id: session.user.id,
             email: session.user.email,
             username: session.user.user_metadata?.username || session.user.email.split('@')[0], // Use stored username if available
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           },
         ]);
 

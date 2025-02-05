@@ -16,12 +16,6 @@ export default function Header({ color, showBackButton = false }: HeaderProps) {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
-  const handleSearch = (query: string) => {
-    // TODO: Implement search functionality
-    console.log('Searching for:', query);
-    setIsSearchVisible(false);
-  };
-
   return (
     <View 
       className="absolute left-0 right-0 z-50"
@@ -44,8 +38,7 @@ export default function Header({ color, showBackButton = false }: HeaderProps) {
       <SearchOverlay 
         isVisible={isSearchVisible}
         onClose={() => setIsSearchVisible(false)}
-        onSearch={handleSearch}
       />
     </View>
   );
-}; 
+} 

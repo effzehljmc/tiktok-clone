@@ -24,6 +24,14 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 - ✅ Pull-to-refresh functionality
 - ✅ Keyboard-aware input handling
 
+### Creator Profiles
+- ✅ Grid view of creator's videos
+- ✅ Basic profile information display
+- ✅ Video thumbnails with view counts
+- ✅ Navigation to full video view
+- ✅ Error handling and loading states
+- ✅ Responsive grid layout
+
 ## Getting Started
 
 1. Install dependencies
@@ -48,18 +56,26 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 
 ## Development Progress
 
-### Current Branch: feature/comments-system
-- Implemented comments system with real-time updates
-- Added smooth modal transitions
-- Fixed UUID generation for comments
-- Improved navigation and back button behavior
+### Current Branch: fix/profile-thumbnails
+- Removed on-the-fly thumbnail generation to improve stability
+- Simplified creator profile screen implementation
+- Fixed profile navigation crashes
 - Enhanced error handling and user feedback
+- Improved performance by removing heavy image processing
+
+### Thumbnail Management
+Video thumbnails are now managed manually through the database:
+- Thumbnails are pre-generated and stored in Supabase storage
+- Thumbnail URLs are stored in the videos table under `thumbnail_url`
+- This approach provides better stability and performance
+- Removes the need for client-side image processing
 
 ## Next Steps
+- Set up automated thumbnail generation pipeline
 - Implement video upload functionality
 - Add user authentication
 - Implement likes system
-- Add user profiles
+- Enhance user profiles
 
 ## Contributing
 1. Create a feature branch

@@ -6,12 +6,18 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VideoOverlay } from './VideoOverlay';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import Header from '../header';
+import { VideoCategory } from '@prisma/client';
 
-export function VideoFeed() {
-  const { data: videos, isLoading } = useVideos();
+interface VideoFeedProps {
+  category?: VideoCategory;
+  renderVideoOverlay?: (video: VideoType) => React.ReactNode;
+}
+
+export function VideoFeed({ category, renderVideoOverlay }: VideoFeedProps) {
+  const { data: videos, isLoading } = useVideos(category);
   const { trackVideoMetrics } = useVideoMetrics();
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [videoStatus, setVideoStatus] = useState<{ [key: string]: AVPlaybackStatus }>({});
@@ -20,6 +26,7 @@ export function VideoFeed() {
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { videoId } = useLocalSearchParams<{ videoId: string }>();
 
   const styles = StyleSheet.create({
     container: {
@@ -105,6 +112,31 @@ export function VideoFeed() {
     });
   }, [activeVideoIndex, videos]);
 
+  // Effect to scroll to the video when videoId is provided
+  useEffect(() => {
+    console.log('VideoFeed: videoId param changed:', videoId);
+    
+    if (videoId && videos) {
+      const index = videos.findIndex(video => video.id === videoId);
+      console.log('VideoFeed: found video at index:', index);
+      
+      if (index !== -1) {
+        console.log('VideoFeed: scrolling to video:', videoId, 'at index:', index);
+        // Use requestAnimationFrame to ensure the scroll happens after any layout updates
+        requestAnimationFrame(() => {
+          flatListRef.current?.scrollToIndex({
+            index,
+            animated: true,
+            viewPosition: 0
+          });
+          setActiveVideoIndex(index);
+        });
+      } else {
+        console.log('VideoFeed: video not found in list:', videoId);
+      }
+    }
+  }, [videoId, videos]); // Re-run when either videoId or videos changes
+
   const handlePlayPause = useCallback(async (videoId: string) => {
     const video = videoRefs.current[videoId];
     if (!video) return;
@@ -159,10 +191,15 @@ export function VideoFeed() {
   }, [router]);
 
   const handleProfilePress = useCallback((creatorId: string) => {
+    if (!creatorId) {
+      console.error('No creator ID provided');
+      return;
+    }
+
     router.push({
-      pathname: "/(tabs)/profile",
-      params: { userId: creatorId }
-    } as any); // TODO: Remove 'as any' when proper type definitions are added
+      pathname: "/creator-profile",
+      params: { id: creatorId }
+    });
   }, [router]);
 
   const renderItem = useCallback(({ item, index }: ListRenderItemInfo<VideoType>) => (
@@ -197,13 +234,15 @@ export function VideoFeed() {
         volume={1.0}
         rate={1.0}
       />
-      <VideoOverlay 
-        video={item} 
-        bottomInset={insets.bottom}
-        onShare={() => handleShare(item)}
-        onCommentPress={() => handleCommentPress(item.id)}
-        onProfilePress={() => handleProfilePress(item.creator.id)}
-      />
+      {renderVideoOverlay ? renderVideoOverlay(item) : (
+        <VideoOverlay 
+          video={item} 
+          bottomInset={insets.bottom}
+          onShare={() => handleShare(item)}
+          onCommentPress={() => handleCommentPress(item.id)}
+          onProfilePress={() => handleProfilePress(item.creator.id)}
+        />
+      )}
       <TouchableOpacity 
         style={styles.playPauseButton}
         onPress={() => handlePlayPause(item.id)}
@@ -215,7 +254,7 @@ export function VideoFeed() {
         />
       </TouchableOpacity>
     </View>
-  ), [activeVideoIndex, windowHeight, videoStatus, handlePlayPause, handleShare, handleCommentPress, handleProfilePress]);
+  ), [activeVideoIndex, windowHeight, videoStatus, handlePlayPause, handleShare, handleCommentPress, handleProfilePress, renderVideoOverlay]);
 
   if (isLoading) {
     return (

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { supabase } from '@/utils/supabase';
 import { router } from 'expo-router';
 import React from 'react';
+import { handleSignUp as authHandleSignUp } from '@/utils/auth-hooks';
 
 interface User {
   id: string;
@@ -40,19 +41,36 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        getUser(data.session.user.id);
-        router.replace('/(tabs)');
+      if (data.session?.user) {
+        // Only try to get user data if email is confirmed
+        if (data.session.user.email_confirmed_at) {
+          getUser(data.session.user.id);
+        } else {
+          setUser(null);
+        }
       }
       setLoading(false);
     });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        getUser(session.user.id);
-        router.replace('/(tabs)');
-      } else {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_OUT') {
         setUser(null);
+        router.replace('/(auth)');
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user.email_confirmed_at) {
+          const userData = await getUser(session.user.id);
+          if (userData) {
+            router.replace('/(tabs)');
+          } else {
+            // If we have auth but no user record, keep them on auth pages
+            router.replace('/(auth)');
+          }
+        } else {
+          setUser(null);
+          router.replace('/(auth)');
+        }
       }
     });
 
@@ -62,16 +80,28 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   }, []);
 
   async function getUser(userId: string) {
-    const { data, error } = await supabase
-      .from('User')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    if (error) {
-      console.error('GetUser error:', error);
-      return;
+    try {
+      const { data, error } = await supabase
+        .from('User')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // User record doesn't exist yet, this is normal for new signups
+          console.log('User record not found, waiting for creation');
+          return null;
+        }
+        console.error('GetUser error:', error);
+        return null;
+      }
+      setUser(data);
+      return data;
+    } catch (error) {
+      console.error('Error in getUser:', error);
+      return null;
     }
-    setUser(data);
   }
 
   async function signIn(email: string, password: string) {
@@ -81,30 +111,21 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       throw error;
     }
     if (data.session?.user.id) {
-      await getUser(data.session.user.id);
-      router.replace('/(tabs)');
+      const userData = await getUser(data.session.user.id);
+      if (userData) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)');
+      }
     }
   }
 
   async function signUp(email: string, password: string, username: string) {
-    const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-    if (authError) {
-      console.error('SignUp error:', authError);
-      throw authError;
+    const response = await authHandleSignUp(email, password, username);
+    if (response.error) {
+      throw response.error;
     }
-    if (!authData.user?.id) {
-      throw new Error('No user ID returned from signup');
-    }
-    const { error: dbError } = await supabase
-      .from('User')
-      .insert([{ id: authData.user.id, username, email }])
-      .single();
-    if (dbError) {
-      console.error('DB Insert error:', dbError);
-      throw dbError;
-    }
-    await getUser(authData.user.id);
-    router.back();
+    // Don't navigate or get user here - wait for email verification
   }
 
   async function signOut() {

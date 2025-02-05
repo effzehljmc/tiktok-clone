@@ -11,9 +11,14 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false)
 
   async function signUpWithEmail() {
+    if (!email || !password || !username) {
+      Alert.alert('Error', 'Please fill in all fields')
+      return
+    }
+
     setLoading(true)
     try {
-      const { error } = await handleSignUp(email, password, username)
+      const { error, message } = await handleSignUp(email, password, username)
       
       if (error) {
         Alert.alert(
@@ -24,8 +29,18 @@ export default function SignUp() {
       } else {
         Alert.alert(
           'Success',
-          'Please check your inbox for email verification!',
-          [{ text: 'OK', onPress: () => router.push('/') }]
+          message || 'Account created successfully! Please check your email for verification.',
+          [{ 
+            text: 'OK', 
+            onPress: () => {
+              // Clear the form
+              setEmail('')
+              setPassword('')
+              setUsername('')
+              // Navigate back to sign in
+              router.replace('/')
+            }
+          }]
         )
       }
     } catch (error) {
@@ -50,6 +65,8 @@ export default function SignUp() {
           value={username}
           placeholder="username"
           autoCapitalize="none"
+          disabled={loading}
+          errorStyle={{ height: 0 }}
         />
       </View>
       <View style={[styles.verticallySpaced, styles.mt20]}>
@@ -60,6 +77,9 @@ export default function SignUp() {
           value={email}
           placeholder="email@address.com"
           autoCapitalize="none"
+          disabled={loading}
+          errorStyle={{ height: 0 }}
+          keyboardType="email-address"
         />
       </View>
       <View style={styles.verticallySpaced}>
@@ -71,15 +91,23 @@ export default function SignUp() {
           secureTextEntry
           placeholder="Password"
           autoCapitalize="none"
+          disabled={loading}
+          errorStyle={{ height: 0 }}
         />
       </View>
       <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Button title="Sign Up" disabled={loading} onPress={signUpWithEmail} />
+        <Button 
+          title={loading ? "Creating Account..." : "Sign Up"} 
+          disabled={loading} 
+          onPress={signUpWithEmail}
+          loading={loading}
+        />
       </View>
       <Button 
         type="clear" 
         title="Back to Sign In" 
         onPress={() => router.push('/')}
+        disabled={loading}
       />
     </View>
   )

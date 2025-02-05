@@ -48,6 +48,7 @@ model Video {
   likes         Like[]
   metrics       VideoMetrics[]
   creator       User           @relation(fields: [creatorId], references: [id])
+  recipeMetadata RecipeMetadata?
 
   @@index([creatorId])
   @@index([createdAt(sort: Desc)])
@@ -110,6 +111,24 @@ model VideoMetrics {
   @@map("video_metrics")
 }
 
+model RecipeMetadata {
+  id            String   @id @default(uuid()) @db.Uuid
+  videoId       String   @unique @map("video_id") @db.Uuid
+  ingredients   String[]
+  cookingTime   Int      @map("cooking_time") // in minutes
+  difficulty    String   // BEGINNER, INTERMEDIATE, ADVANCED
+  cuisine       String   // e.g., Italian, Mexican, etc.
+  servings      Int
+  calories      Int?
+  equipment     String[]
+  dietaryTags   String[] @map("dietary_tags") // e.g., Vegetarian, Vegan, etc.
+  steps         Json     // Array of {timestamp: number, description: string}
+  video         Video    @relation(fields: [videoId], references: [id])
+
+  @@index([videoId])
+  @@map("recipe_metadata")
+}
+
 enum VideoStatus {
   PROCESSING
   PUBLISHED
@@ -122,4 +141,5 @@ enum VideoCategory {
   EDUCATION
   ENTERTAINMENT
   SPORTS
+  COOKING
 }
