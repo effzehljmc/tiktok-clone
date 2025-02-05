@@ -104,7 +104,7 @@ export function RecipeFeed() {
     },
     difficultyBadge: {
       position: 'absolute',
-      top: 70,
+      top: 100,
       right: 16,
       paddingHorizontal: 8,
       paddingVertical: 4,
@@ -318,6 +318,7 @@ export function RecipeFeed() {
       </View>
       <VideoFeed
         category={COOKING_CATEGORY}
+        showSearchIcon={false}
         renderVideoOverlay={(video: Video) => {
           const recipeVideo = video as RecipeVideo;
           return (

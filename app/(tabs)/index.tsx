@@ -1,11 +1,11 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, StatusBar } from 'react-native';
 import { RecipeFeed } from '@/components/recipe/RecipeFeed';
 import { VideoFeed } from '@/components/video/VideoFeed';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TouchableOpacity } from 'react-native';
 
 const Tab = createMaterialTopTabNavigator();
@@ -21,9 +21,15 @@ function RecipeTab() {
 export default function FeedScreen() {
   const [currentTab, setCurrentTab] = useState('ForYou');
 
+  useEffect(() => {
+    StatusBar.setTranslucent(true);
+    StatusBar.setBackgroundColor('transparent');
+    StatusBar.setBarStyle('light-content');
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: 'black' }}>
-      <SafeAreaView style={styles.tabContainer} edges={['top']}>
+      <SafeAreaView style={styles.tabContainer} edges={['bottom', 'left', 'right']}>
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
         {currentTab === 'ForYou' && (
           <TouchableOpacity style={styles.searchButton}>

@@ -90,16 +90,9 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
   });
 
   useEffect(() => {
-    // StatusBar transparent und durchschimmernd machen
     StatusBar.setTranslucent(true);
     StatusBar.setBackgroundColor('transparent');
     StatusBar.setBarStyle('light-content');
-
-    // Optional: Cleanup wenn gewünscht
-    return () => {
-      // Hier könnten wir die StatusBar zurücksetzen, wenn der VideoFeed unmountet
-      // In diesem Fall lassen wir sie aber transparent
-    };
   }, []);
 
   // Effect to pause other videos when active index changes
@@ -259,7 +252,7 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.centerContainer}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.centerContainer}>
         <Text>Loading...</Text>
       </SafeAreaView>
     );
@@ -267,7 +260,7 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
 
   if (!videos?.length) {
     return (
-      <SafeAreaView style={styles.centerContainer}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.centerContainer}>
         <Text>Keine Videos verfügbar</Text>
       </SafeAreaView>
     );

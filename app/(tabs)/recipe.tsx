@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RecipeScreen() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
+    <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: 'black' }}>
       <RecipeFeed />
     </SafeAreaView>
   );
