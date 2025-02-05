@@ -110,7 +110,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   async function signOut() {
     await supabase.auth.signOut();
     setUser(null);
-    router.replace('/');
+    router.replace('/(auth)');
   }
 
   const value = {
