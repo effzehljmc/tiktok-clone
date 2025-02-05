@@ -41,9 +41,17 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {
+        "origin": false
+      },
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "173654fe-0a29-4989-8f70-15ff6b3c69a0"
       }
+    },
+    "owner": "lukasmchagas",
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/173654fe-0a29-4989-8f70-15ff6b3c69a0"
     }
   }
 }

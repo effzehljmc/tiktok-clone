@@ -4,6 +4,7 @@ import { useUser } from './useUser';
 import { v4 as uuidv4 } from "uuid";
 import "react-native-get-random-values";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import Toast from 'react-native-toast-message';
 
 interface UseLikeProps {
   videoId: string;
@@ -55,6 +56,18 @@ export function useLike({ videoId, initialLikeCount, initialIsLiked }: UseLikePr
       if (!user?.id) throw new Error('User not authenticated');
       
       if (shouldLike) {
+        // First check if the like already exists
+        const { data: existingLike } = await supabase
+          .from('likes')
+          .select('id')
+          .match({ video_id: videoId, user_id: user.id })
+          .single();
+
+        // If like exists and we're trying to like, just return silently
+        if (existingLike) {
+          return;
+        }
+
         const { error } = await supabase
           .from('likes')
           .insert([{ 
@@ -62,13 +75,27 @@ export function useLike({ videoId, initialLikeCount, initialIsLiked }: UseLikePr
             video_id: videoId, 
             user_id: user.id 
           }]);
-        if (error) throw error;
+
+        if (error) {
+          // If it's a duplicate key error (409 Conflict), ignore it
+          if (error.code === '23505' || error.message?.includes('duplicate key')) {
+            return;
+          }
+          throw error;
+        }
       } else {
         const { error } = await supabase
           .from('likes')
           .delete()
           .match({ video_id: videoId, user_id: user.id });
-        if (error) throw error;
+        
+        if (error) {
+          // If record not found, ignore the error
+          if (error.code === 'PGRST116') {
+            return;
+          }
+          throw error;
+        }
       }
     },
     onMutate: async (shouldLike) => {
@@ -86,12 +113,21 @@ export function useLike({ videoId, initialLikeCount, initialIsLiked }: UseLikePr
       // Return context with the snapshotted value
       return { previousLiked, previousCount };
     },
-    onError: (err, _, context) => {
+    onError: (err, shouldLike, context) => {
       // Revert the optimistic update on error
       if (context) {
         setIsLiked(context.previousLiked);
         setLikeCount(context.previousCount);
       }
+
+      // Show user-friendly error message
+      Toast.show({
+        type: 'error',
+        text1: shouldLike ? 'Failed to like video' : 'Failed to unlike video',
+        text2: 'Please try again later',
+        position: 'bottom',
+      });
+
       console.error('Error toggling like:', err);
     },
     onSettled: () => {
@@ -101,15 +137,18 @@ export function useLike({ videoId, initialLikeCount, initialIsLiked }: UseLikePr
   });
 
   const toggleLike = useCallback(async () => {
-    if (!user) return;
-    
-    // Optimistically update UI immediately
-    const newIsLiked = !isLiked;
-    setIsLiked(newIsLiked);
-    setLikeCount(prev => prev + (newIsLiked ? 1 : -1));
+    if (!user) {
+      Toast.show({
+        type: 'error',
+        text1: 'Sign in required',
+        text2: 'Please sign in to like videos',
+        position: 'bottom',
+      });
+      return;
+    }
     
     // Then trigger the mutation
-    likeMutation.mutate(newIsLiked);
+    likeMutation.mutate(!isLiked);
   }, [user, isLiked, likeMutation]);
 
   return {

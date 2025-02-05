@@ -131,7 +131,7 @@ export default function CreatorProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={[{ flex: 1 }, { backgroundColor: 'white' }]}>
         <Header color="black" showBackButton />
         <View style={[styles.container, styles.centered]}>
           <ActivityIndicator size="large" />
@@ -142,7 +142,7 @@ export default function CreatorProfileScreen() {
 
   if (error || !creator) {
     return (
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={[{ flex: 1 }, { backgroundColor: 'white' }]}>
         <Header color="black" showBackButton />
         <View style={[styles.container, styles.centered]}>
           <Text style={styles.errorText}>{error || 'Creator not found'}</Text>
@@ -158,7 +158,7 @@ export default function CreatorProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: 'white' }]}>
       <Header color="black" showBackButton />
       <FlatList
         ListHeaderComponent={

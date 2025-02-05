@@ -26,13 +26,13 @@ export default function Header({ color, showBackButton = false }: HeaderProps) {
       <View className="flex-row items-center justify-between px-4 py-2">
         {showBackButton ? (
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color="white" />
+            <Ionicons name="chevron-back" size={28} color={color} />
           </TouchableOpacity>
         ) : (
           <View style={{ width: 28 }} />
         )}
         <TouchableOpacity onPress={() => setIsSearchVisible(true)}>
-          <Ionicons name="search" size={28} color="white" />
+          <Ionicons name="search" size={28} color={color} />
         </TouchableOpacity>
       </View>
       <SearchOverlay 

@@ -5,6 +5,7 @@ import { Video } from '../../hooks/useVideos';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { CollapsibleText } from './CollapsibleText';
 
 interface VideoOverlayProps {
   video: Video;
@@ -32,8 +33,15 @@ export function VideoOverlay({
         ]}
       >
         <View style={styles.infoContainer}>
-          <Text style={styles.title}>{video.caption || video.title}</Text>
+          <Text style={styles.title}>{video.title}</Text>
           <Text style={styles.username}>@{video.creator.username}</Text>
+          {video.caption && (
+            <CollapsibleText
+              text={video.caption}
+              maxLines={2}
+              style={styles.caption}
+            />
+          )}
         </View>
       </Animated.View>
 
@@ -62,7 +70,7 @@ export function VideoOverlay({
         <TouchableOpacity style={styles.interactionItem} onPress={onCommentPress}>
           <MaterialCommunityIcons name="comment-outline" size={35} color="white" />
           <Text style={styles.interactionCount}>
-            {video.commentsCount?.toLocaleString() || '0'}
+            {video.commentsCount.toLocaleString()}
           </Text>
         </TouchableOpacity>
 
@@ -108,11 +116,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+    marginBottom: 4,
   },
   username: {
     color: 'white',
-    marginTop: 4,
     fontSize: 14,
+    marginBottom: 8,
+  },
+  caption: {
+    color: 'white',
+    fontSize: 14,
+    lineHeight: 20,
   },
   interactionBar: {
     position: 'absolute',
@@ -122,18 +136,17 @@ const styles = StyleSheet.create({
   },
   interactionItem: {
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   interactionCount: {
     color: 'white',
-    fontSize: 13,
-    marginTop: 3,
-    fontWeight: '600',
+    fontSize: 12,
+    marginTop: 4,
   },
   profileImage: {
     width: 35,
     height: 35,
     borderRadius: 17.5,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#666',
   },
 }); 

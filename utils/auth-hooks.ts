@@ -8,40 +8,6 @@ interface AuthResponse {
   message?: string;
 }
 
-export async function createUserAfterSignUp(
-  email: string, 
-  id: string, 
-  username: string
-): Promise<AuthResponse> {
-  try {
-    console.log('Creating user record:', { email, id, username });
-    const { data, error } = await supabase
-      .from('User')
-      .upsert([
-        {
-          id: id,
-          email,
-          username,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Database error:', error);
-      throw error;
-    }
-    
-    console.log('User record created:', data);
-    return { error: null }
-  } catch (error) {
-    console.error('Error creating user:', error)
-    return { error: error as AuthError }
-  }
-}
-
 export async function handleSignUp(
   email: string, 
   password: string, 
@@ -72,7 +38,6 @@ export async function handleSignUp(
       options: {
         data: {
           username,
-          pending_user_record: true
         }
       }
     })
@@ -88,38 +53,6 @@ export async function handleSignUp(
       }
     }
 
-    // Immediately create the user record
-    const { error: createError } = await supabase
-      .from('User')
-      .insert([
-        {
-          id: user.id,
-          email,
-          username,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }
-      ])
-      .select()
-      .single();
-
-    if (createError) {
-      console.error('Error creating user record:', createError);
-      return {
-        error: {
-          name: 'DatabaseError',
-          message: 'Account created but failed to set up user profile. Please contact support.'
-        } as AuthError
-      }
-    }
-
-    // Store the user info in AsyncStorage for later
-    await AsyncStorage.setItem('pendingUser', JSON.stringify({
-      email,
-      id: user.id,
-      username
-    }));
-
     return { 
       error: null, 
       message: 'Please check your email for verification. You will be able to use the app after verifying your email.' 
@@ -130,27 +63,11 @@ export async function handleSignUp(
   }
 }
 
-// Add this to handle the user record creation after email verification
+// Add this to handle email verification
 export async function handleEmailVerification() {
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return;
-
-    // Check if we have pending user data
-    const pendingUserString = await AsyncStorage.getItem('pendingUser')
-    if (!pendingUserString) return;
-
-    const pendingUser = JSON.parse(pendingUserString);
-    
-    // Create the user record
-    await createUserAfterSignUp(
-      pendingUser.email,
-      pendingUser.id,
-      pendingUser.username
-    );
-
-    // Clear the pending user data
-    await AsyncStorage.removeItem('pendingUser');
 
     // Now redirect to the main app
     router.replace('/(tabs)');
@@ -168,49 +85,6 @@ async function checkNetworkConnection(): Promise<boolean> {
   } catch (error) {
     console.error('Network check error:', error);
     return false;
-  }
-}
-
-// Add this function to create user record from auth data
-async function ensureUserRecord(session: any): Promise<void> {
-  try {
-    // First check if user record exists
-    const { data: existingUser, error: checkError } = await supabase
-      .from('User')
-      .select()
-      .eq('id', session.user.id)
-      .single();
-
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" error
-      console.error('Error checking for existing user:', checkError);
-      return;
-    }
-
-    if (!existingUser) {
-      console.log('Creating missing user record for:', session.user.email);
-      // Create user record from auth data
-      const { error: insertError } = await supabase
-        .from('User')
-        .insert([
-          {
-            id: session.user.id,
-            email: session.user.email,
-            username: session.user.user_metadata?.username || session.user.email.split('@')[0], // Use stored username if available
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ]);
-
-      if (insertError) {
-        console.error('Error creating user record:', insertError);
-        return;
-      }
-      console.log('User record created successfully');
-    } else {
-      console.log('User record already exists:', existingUser.email);
-    }
-  } catch (error) {
-    console.error('Error ensuring user record:', error);
   }
 }
 
@@ -235,9 +109,6 @@ export async function handleSignIn(email: string, password: string): Promise<Aut
         } as AuthError
       }
     }
-
-    // Ensure user record exists
-    await ensureUserRecord(session);
     
     // Now we can redirect
     router.replace('/(tabs)');
