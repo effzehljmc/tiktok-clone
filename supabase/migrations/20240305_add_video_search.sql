@@ -79,90 +79,36 @@ $$;
 -- Create a function to search videos using hybrid search
 CREATE OR REPLACE FUNCTION search_videos(
   search_query TEXT,
-  query_embedding vector(384),
-  category_filter "VideoCategory" DEFAULT NULL,
+  category_filter VideoCategory DEFAULT NULL,
+  dietary_preference TEXT DEFAULT NULL,
   limit_val INTEGER DEFAULT 20,
-  offset_val INTEGER DEFAULT 0,
-  semantic_weight FLOAT DEFAULT 0.5,
-  text_weight FLOAT DEFAULT 0.5
-) RETURNS TABLE (
-  id UUID,
-  title TEXT,
-  description TEXT,
-  video_url TEXT,
-  thumbnail_url TEXT,
-  duration INTEGER,
-  views_count INTEGER,
-  likes_count INTEGER,
-  comments_count INTEGER,
-  status "VideoStatus",
-  is_private BOOLEAN,
-  creator_id UUID,
-  category "VideoCategory",
-  tags TEXT[],
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ,
-  search_rank REAL
-) AS $$
+  offset_val INTEGER DEFAULT 0
+) RETURNS SETOF videos AS $$
 BEGIN
   RETURN QUERY
-  WITH semantic_results AS (
-    SELECT 
-      id,
-      1 - (embedding <=> query_embedding) AS semantic_score
-    FROM videos
-    WHERE embedding IS NOT NULL
-    ORDER BY embedding <=> query_embedding
-    LIMIT limit_val * 2
-  ),
-  full_text_results AS (
-    SELECT 
-      v.id,
-      ts_rank(v.search_vector, websearch_to_tsquery('english', search_query)) AS text_score
-    FROM videos v
-    WHERE 
-      v.search_vector @@ websearch_to_tsquery('english', search_query)
-  ),
-  combined_results AS (
-    SELECT 
-      v.*,
-      COALESCE(sr.semantic_score, 0) * semantic_weight + 
-      COALESCE(ftr.text_score, 0) * text_weight AS combined_score
-    FROM videos v
-    LEFT JOIN semantic_results sr ON v.id = sr.id
-    LEFT JOIN full_text_results ftr ON v.id = ftr.id
-    WHERE 
-      v.status = 'PUBLISHED' 
-      AND v.is_private = false
-      AND (category_filter IS NULL OR v.category = category_filter)
-      AND (
-        sr.id IS NOT NULL 
-        OR ftr.id IS NOT NULL 
-        OR v.title ILIKE '%' || search_query || '%' 
-        OR v.description ILIKE '%' || search_query || '%'
-      )
-  )
-  SELECT 
-    cr.id,
-    cr.title,
-    cr.description,
-    cr.video_url,
-    cr.thumbnail_url,
-    cr.duration,
-    cr.views_count,
-    cr.likes_count,
-    cr.comments_count,
-    cr.status,
-    cr.is_private,
-    cr.creator_id,
-    cr.category,
-    cr.tags,
-    cr.created_at,
-    cr.updated_at,
-    cr.combined_score AS search_rank
-  FROM combined_results cr
-  ORDER BY cr.combined_score DESC, cr.created_at DESC
+  SELECT DISTINCT v.*
+  FROM videos v
+  LEFT JOIN recipe_metadata rm ON v.id = rm.video_id
+  WHERE v.status = 'PUBLISHED'
+    AND v.is_private = false
+    AND (
+      v.title ILIKE '%' || search_query || '%'
+      OR v.description ILIKE '%' || search_query || '%'
+      OR v.tags @> ARRAY[search_query]
+    )
+    AND (category_filter IS NULL OR v.category = category_filter)
+    AND (
+      dietary_preference IS NULL 
+      OR (rm.dietary_tags IS NOT NULL AND rm.dietary_tags @> ARRAY[dietary_preference])
+    )
+  ORDER BY 
+    CASE 
+      WHEN v.title ILIKE '%' || search_query || '%' THEN 0
+      WHEN v.description ILIKE '%' || search_query || '%' THEN 1
+      ELSE 2
+    END,
+    v.created_at DESC
   LIMIT limit_val
   OFFSET offset_val;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER; 
+$$ LANGUAGE plpgsql; 

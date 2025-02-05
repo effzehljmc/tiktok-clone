@@ -8,10 +8,11 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 interface SearchResultsProps {
   query: string;
   category?: VideoCategory;
+  dietaryPreference?: string;
   onClose: () => void;
 }
 
-export default function SearchResults({ query, category, onClose }: SearchResultsProps) {
+export default function SearchResults({ query, category, dietaryPreference, onClose }: SearchResultsProps) {
   const router = useRouter();
   const {
     data,
@@ -21,11 +22,12 @@ export default function SearchResults({ query, category, onClose }: SearchResult
     isLoading,
     isError,
     error
-  } = useVideoSearch({ query, category });
+  } = useVideoSearch({ query, category, dietaryPreference });
 
   console.log('SearchResults render:', {
     query,
     category,
+    dietaryPreference,
     hasData: !!data,
     pageCount: data?.pages.length,
     isLoading,

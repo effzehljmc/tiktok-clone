@@ -31,7 +31,7 @@ import { VideoCategory } from '@prisma/client';
 // }
 
 interface SearchResult extends VideoType {
-  search_rank: number;
+  search_rank?: number;
 }
 
 interface RawSearchResult {
@@ -51,32 +51,28 @@ interface RawSearchResult {
   tags: string[];
   created_at: string;
   updated_at: string;
-  search_rank: number;
 }
 
 interface UseVideoSearchProps {
   query: string;
   category?: VideoCategory;
+  dietaryPreference?: string;
   enabled?: boolean;
 }
 
-export function useVideoSearch({ query, category, enabled = true }: UseVideoSearchProps) {
+export function useVideoSearch({ query, category, dietaryPreference, enabled = true }: UseVideoSearchProps) {
   const PAGE_SIZE = 20;
 
   return useInfiniteQuery<SearchResult[]>({
-    queryKey: ['videoSearch', query, category],
+    queryKey: ['videoSearch', query, category, dietaryPreference],
     queryFn: async ({ pageParam }) => {
-      console.log('Search params:', { query, category, pageParam });
+      console.log('Search params:', { query, category, dietaryPreference, pageParam });
       
-      if (!query?.trim()) {
-        console.log('Empty query, returning empty results');
-        return [];
-      }
-
       try {
         const searchParams = {
-          search_query: query.trim(),
+          search_query: query?.trim() || '',
           category_filter: category,
+          dietary_preference: dietaryPreference,
           limit_val: PAGE_SIZE,
           offset_val: (pageParam as number) * PAGE_SIZE
         };
@@ -124,7 +120,6 @@ export function useVideoSearch({ query, category, enabled = true }: UseVideoSear
             tags: video.tags,
             createdAt: video.created_at,
             updatedAt: video.updated_at,
-            search_rank: video.search_rank,
             creator: {
               id: video.creator_id,
               username: 'Unknown User',
@@ -157,7 +152,6 @@ export function useVideoSearch({ query, category, enabled = true }: UseVideoSear
             tags: video.tags,
             createdAt: video.created_at,
             updatedAt: video.updated_at,
-            search_rank: video.search_rank,
             creator: creator || {
               id: video.creator_id,
               username: 'Unknown User',
@@ -178,7 +172,7 @@ export function useVideoSearch({ query, category, enabled = true }: UseVideoSear
       if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
       return allPages.length;
     },
-    enabled: enabled && !!query?.trim(),
+    enabled: enabled && (!!query?.trim() || !!category || !!dietaryPreference),
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 } 

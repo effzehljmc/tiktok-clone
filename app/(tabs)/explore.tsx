@@ -5,18 +5,39 @@ import { Ionicons } from '@expo/vector-icons';
 import { VideoCategory } from '@prisma/client';
 import SearchResults from '@/components/search/SearchResults';
 
-const SEARCH_CATEGORIES = ['MUSIC', 'GAMING', 'EDUCATION', 'ENTERTAINMENT', 'SPORTS'] as const;
+// Recipe categories mapped to VideoCategory
+const RECIPE_CATEGORIES = [
+  VideoCategory.BREAKFAST,
+  VideoCategory.LUNCH,
+  VideoCategory.DINNER,
+  VideoCategory.DESSERT,
+  VideoCategory.SNACKS,
+  VideoCategory.DRINKS,
+] as const;
+
+// Dietary preferences
+const DIETARY_PREFERENCES = [
+  'VEGETARIAN',
+  'VEGAN',
+  'GLUTEN_FREE',
+  'DAIRY_FREE',
+] as const;
 
 export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<typeof SEARCH_CATEGORIES[number] | undefined>();
+  const [selectedCategory, setSelectedCategory] = useState<VideoCategory | undefined>();
+  const [selectedDiet, setSelectedDiet] = useState<typeof DIETARY_PREFERENCES[number] | undefined>();
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
   }, []);
 
-  const handleCategorySelect = useCallback((category: typeof SEARCH_CATEGORIES[number]) => {
+  const handleCategorySelect = useCallback((category: VideoCategory) => {
     setSelectedCategory(prev => prev === category ? undefined : category);
+  }, []);
+
+  const handleDietSelect = useCallback((diet: typeof DIETARY_PREFERENCES[number]) => {
+    setSelectedDiet(prev => prev === diet ? undefined : diet);
   }, []);
 
   return (
@@ -28,7 +49,7 @@ export default function ExploreScreen() {
           <Ionicons name="search" size={20} color="gray" />
           <TextInput
             className="flex-1 ml-2 text-base"
-            placeholder="Search videos..."
+            placeholder="Search recipes..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
@@ -45,49 +66,87 @@ export default function ExploreScreen() {
         </View>
       </View>
 
-      {/* Categories */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        className="px-4 py-2"
-      >
-        {SEARCH_CATEGORIES.map((category) => (
-          <TouchableOpacity
-            key={category}
-            onPress={() => handleCategorySelect(category)}
-            className={`px-4 py-2 mr-2 rounded-full ${
-              selectedCategory === category 
-                ? 'bg-black' 
-                : 'bg-gray-100'
-            }`}
-          >
-            <Text className={`${
-              selectedCategory === category 
-                ? 'text-white' 
-                : 'text-gray-600'
-            }`}>
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* Recipe Categories */}
+      <View>
+        <Text className="px-4 py-2 text-base font-semibold text-gray-600">Categories</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          className="px-4 py-2"
+        >
+          {RECIPE_CATEGORIES.map((category) => (
+            <TouchableOpacity
+              key={category}
+              onPress={() => handleCategorySelect(category)}
+              className={`px-4 py-2 mr-2 rounded-full ${
+                selectedCategory === category 
+                  ? 'bg-black' 
+                  : 'bg-gray-100'
+              }`}
+            >
+              <Text className={`${
+                selectedCategory === category 
+                  ? 'text-white' 
+                  : 'text-gray-600'
+              }`}>
+                {category.split('_').map(word => 
+                  word.charAt(0) + word.slice(1).toLowerCase()
+                ).join(' ')}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Dietary Preferences */}
+      <View>
+        <Text className="px-4 py-2 text-base font-semibold text-gray-600">Dietary Preferences</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          className="px-4 py-2"
+        >
+          {DIETARY_PREFERENCES.map((diet) => (
+            <TouchableOpacity
+              key={diet}
+              onPress={() => handleDietSelect(diet)}
+              className={`px-4 py-2 mr-2 rounded-full ${
+                selectedDiet === diet 
+                  ? 'bg-black' 
+                  : 'bg-gray-100'
+              }`}
+            >
+              <Text className={`${
+                selectedDiet === diet 
+                  ? 'text-white' 
+                  : 'text-gray-600'
+              }`}>
+                {diet.split('_').map(word => 
+                  word.charAt(0) + word.slice(1).toLowerCase()
+                ).join(' ')}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Search Results or Empty State */}
       <View className="flex-1">
-        {searchQuery.trim() ? (
+        {searchQuery.trim() || selectedCategory || selectedDiet ? (
           <SearchResults 
             query={searchQuery.trim()} 
             category={selectedCategory}
+            dietaryPreference={selectedDiet}
             onClose={() => {}} // We don't need to close anything in the explore page
           />
         ) : (
           <View className="flex-1 items-center justify-center p-8">
             <Ionicons name="search-outline" size={48} color="gray" />
             <Text className="text-gray-500 text-center mt-4">
-              Search for videos by title, description, or tags
+              Search for recipes by title, description, or tags
             </Text>
             <Text className="text-gray-400 text-center mt-2">
-              Try searching for a category or topic you're interested in
+              Or browse by category and dietary preferences
             </Text>
           </View>
         )}

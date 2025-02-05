@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useState, useEffect } from 'react';
 import { TouchableOpacity } from 'react-native';
+import SearchOverlay from '@/components/search-overlay';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -20,6 +21,7 @@ function RecipeTab() {
 
 export default function FeedScreen() {
   const [currentTab, setCurrentTab] = useState('ForYou');
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   useEffect(() => {
     StatusBar.setTranslucent(true);
@@ -32,7 +34,10 @@ export default function FeedScreen() {
       <SafeAreaView style={styles.tabContainer} edges={['bottom', 'left', 'right']}>
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
         {currentTab === 'ForYou' && (
-          <TouchableOpacity style={styles.searchButton}>
+          <TouchableOpacity 
+            style={styles.searchButton}
+            onPress={() => setIsSearchVisible(true)}
+          >
             <Ionicons name="search" size={24} color="white" />
           </TouchableOpacity>
         )}
@@ -71,6 +76,10 @@ export default function FeedScreen() {
             }}
           />
         </Tab.Navigator>
+        <SearchOverlay 
+          isVisible={isSearchVisible}
+          onClose={() => setIsSearchVisible(false)}
+        />
       </SafeAreaView>
     </View>
   );
