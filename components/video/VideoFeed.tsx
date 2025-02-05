@@ -14,9 +14,10 @@ import { VideoCategory } from '@prisma/client';
 interface VideoFeedProps {
   category?: VideoCategory;
   renderVideoOverlay?: (video: VideoType) => React.ReactNode;
+  showSearchIcon?: boolean;
 }
 
-export function VideoFeed({ category, renderVideoOverlay }: VideoFeedProps) {
+export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true }: VideoFeedProps) {
   const { data: videos, isLoading } = useVideos(category);
   const { trackVideoMetrics } = useVideoMetrics();
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
@@ -274,7 +275,7 @@ export function VideoFeed({ category, renderVideoOverlay }: VideoFeedProps) {
 
   return (
     <View style={styles.container}>
-      <Header color="white" showBackButton={false} />
+      <Header color="white" showBackButton={false} showSearchIcon={showSearchIcon} />
       <FlatList
         ref={flatListRef}
         data={videos}

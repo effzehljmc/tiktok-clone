@@ -104,12 +104,13 @@ export function RecipeFeed() {
     },
     difficultyBadge: {
       position: 'absolute',
-      top: 16,
+      top: 70,
       right: 16,
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 4,
       backgroundColor: 'rgba(0,0,0,0.7)',
+      zIndex: 1,
     },
     difficultyText: {
       color: '#fff',

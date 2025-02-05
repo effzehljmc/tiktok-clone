@@ -13,6 +13,7 @@ import { StyleSheet } from 'react-native';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import { NavigationContainer } from '@react-navigation/native';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -36,39 +37,20 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <QueryClientProvider client={queryClient}>
+    <GestureHandlerRootView style={styles.container}>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
           <AuthProvider>
             <BottomSheetModalProvider>
-              <Stack>
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen 
-                  name="comments" 
-                  options={{
-                    headerShown: false,
-                    presentation: 'transparentModal',
-                    animation: 'fade',
-                    contentStyle: { 
-                      backgroundColor: 'transparent'
-                    }
-                  }}
-                />
-                <Stack.Screen 
-                  name="creator-profile" 
-                  options={{
-                    headerShown: false,
-                    presentation: 'card'
-                  }}
-                />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
               </Stack>
               <Toast />
             </BottomSheetModalProvider>
           </AuthProvider>
-        </QueryClientProvider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 
