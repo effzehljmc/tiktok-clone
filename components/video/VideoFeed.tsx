@@ -215,8 +215,7 @@ export function VideoFeed({ videos, renderVideoOverlay, showSearchIcon = true }:
             ...prev,
             [item.id]: status
           }));
-          // Temporarily disabled metrics tracking
-          // trackVideoMetrics(item.id, status, prevStatus);
+          trackVideoMetrics(item.id, status, prevStatus);
         }}
         progressUpdateIntervalMillis={500}
         shouldCorrectPitch={false}

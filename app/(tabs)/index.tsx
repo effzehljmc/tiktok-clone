@@ -54,6 +54,7 @@ export default function FeedScreen() {
         )}
         <Tab.Navigator
           style={styles.navigator}
+          initialRouteName="ForYou"
           screenOptions={{
             tabBarStyle: styles.tabBar,
             tabBarIndicatorStyle: styles.indicator,

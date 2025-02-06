@@ -9,32 +9,44 @@ interface PendingUpdate {
   lastPosition: number;
   completed: boolean;
   watchPercent: number;
-  retryCount: number;
+}
+
+// Constants for better maintainability
+const BATCH_UPDATE_INTERVAL = 3000; // Consistent 3-second interval for batch updates
+const VIEW_THRESHOLD = 0.9; // 90% watched = completed
+
+// Helper functions for metric calculations
+function calculateNewAverageWatchPercent(
+  currentAvg: number,
+  replayCount: number,
+  newWatchPercent: number
+): number {
+  return (currentAvg * replayCount + newWatchPercent) / (replayCount + 1);
+}
+
+function calculateWatchMetrics(
+  positionMillis: number,
+  durationMillis: number
+): { watchedSeconds: number; completed: boolean; watchPercent: number } {
+  const watchedSeconds = Math.floor(positionMillis / 1000);
+  const completed = positionMillis >= (durationMillis * VIEW_THRESHOLD);
+  const watchPercent = durationMillis ? (positionMillis / durationMillis) * 100 : 0;
+  
+  return { watchedSeconds, completed, watchPercent };
 }
 
 export function useVideoMetrics() {
   const { user } = useUser();
   const viewedVideos = useRef<Set<string>>(new Set());
   const pendingUpdates = useRef<PendingUpdate[]>([]);
-  const updateTimeout = useRef<NodeJS.Timeout>();
+  const updateInterval = useRef<NodeJS.Timeout>();
   const videoStarts = useRef<{ [key: string]: number }>({});
+  const userId = useRef(user?.id);
+  const hasLoggedCompletion = useRef<Set<string>>(new Set());
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (updateTimeout.current) {
-        clearTimeout(updateTimeout.current);
-      }
-      // Process any remaining updates
-      if (pendingUpdates.current.length > 0) {
-        processPendingUpdates();
-      }
-    };
-  }, []);
-
-  // Process pending updates with retry logic
+  // Simplified batch processing without complex retry logic
   const processPendingUpdates = useCallback(async () => {
-    if (!user?.id || pendingUpdates.current.length === 0) {
+    if (!userId.current || pendingUpdates.current.length === 0) {
       return;
     }
 
@@ -43,124 +55,142 @@ export function useVideoMetrics() {
 
     for (const update of updates) {
       try {
-        // First get current metrics to calculate new averages
-        const { data: currentMetrics, error: fetchError } = await supabase
+        // Get current metrics for average calculation
+        const { data: currentMetrics } = await supabase
           .from('video_metrics')
           .select('average_watch_percent, replay_count')
-          .match({ user_id: user.id, video_id: update.videoId })
+          .match({ user_id: userId.current, video_id: update.videoId })
           .single();
 
-        if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no record found
-          throw fetchError;
-        }
-
+        // Calculate new metrics
         const replayCount = (currentMetrics?.replay_count || 0) + (videoStarts.current[update.videoId] || 0);
         const currentAvg = currentMetrics?.average_watch_percent || 0;
-        const newAvgPercent = currentMetrics 
-          ? (currentAvg * replayCount + update.watchPercent) / (replayCount + 1)
-          : update.watchPercent;
+        const newAvgPercent = calculateNewAverageWatchPercent(
+          currentAvg,
+          replayCount,
+          update.watchPercent
+        );
 
-        const { error } = await supabase
+        // Update metrics in a single operation
+        await supabase
           .from('video_metrics')
           .upsert({
             video_id: update.videoId,
-            user_id: user.id,
+            user_id: userId.current,
             watched_seconds: update.watchedSeconds,
             last_position: update.lastPosition,
             completed: update.completed,
             replay_count: replayCount,
             average_watch_percent: newAvgPercent
           }, {
-            onConflict: 'user_id,video_id',
-            ignoreDuplicates: false
+            onConflict: 'user_id,video_id'
           });
 
-        if (error) {
-          throw error;
-        }
-        
         // Reset replay counter after successful update
         videoStarts.current[update.videoId] = 0;
+
       } catch (error) {
         console.error('Error updating metrics:', error);
-        if (update.retryCount < 3) {
-          pendingUpdates.current.push({
-            ...update,
-            retryCount: update.retryCount + 1
-          });
+        // Simple error handling - add back to queue only if critical
+        if (update.completed) {
+          pendingUpdates.current.push(update);
         }
       }
     }
+  }, []); // No dependencies needed as we use refs
 
-    if (pendingUpdates.current.length > 0) {
-      updateTimeout.current = setTimeout(processPendingUpdates, 5000);
-    }
+  // Update userId ref when user changes
+  useEffect(() => {
+    userId.current = user?.id;
   }, [user?.id]);
+
+  // Setup consistent batch processing interval
+  useEffect(() => {
+    updateInterval.current = setInterval(processPendingUpdates, BATCH_UPDATE_INTERVAL);
+
+    return () => {
+      if (updateInterval.current) {
+        clearInterval(updateInterval.current);
+      }
+      // Process any remaining updates before unmounting
+      // Using void to explicitly handle the Promise
+      void (async () => {
+        try {
+          await processPendingUpdates();
+        } catch (error) {
+          console.error('Error processing final updates:', error);
+        }
+      })();
+    };
+  }, [processPendingUpdates]);
 
   const trackVideoMetrics = useCallback(async (
     videoId: string, 
     status: AVPlaybackStatus,
     prevStatus?: AVPlaybackStatus
   ) => {
-    if (!status.isLoaded || !user?.id) {
+    if (!status.isLoaded || !userId.current) {
       return;
     }
 
     const positionMillis = status.positionMillis || 0;
     const durationMillis = status.durationMillis || 0;
-    const watchedSeconds = Math.floor(positionMillis / 1000);
-    const completed = positionMillis >= (durationMillis * 0.9); // 90% watched = completed
-    const watchPercent = durationMillis ? (positionMillis / durationMillis) * 100 : 0;
 
-    // Track video start/replay
+    // Calculate watch metrics using helper function
+    const { watchedSeconds, completed, watchPercent } = calculateWatchMetrics(
+      positionMillis,
+      durationMillis
+    );
+
+    // Track video start/replay with simplified logic
     if (!prevStatus?.isLoaded && status.isLoaded) {
       videoStarts.current[videoId] = (videoStarts.current[videoId] || 0) + 1;
+      // Reset completion logging when video starts
+      hasLoggedCompletion.current.delete(videoId);
       console.log('Video started:', videoId);
     }
 
-    // Track new view
+    // Track new view with simplified atomic operation
     if (!viewedVideos.current.has(videoId)) {
       viewedVideos.current.add(videoId);
       try {
-        const { error } = await supabase.rpc('increment_video_views', { video_id: videoId });
-        if (error) {
-          console.error('Error incrementing views:', error);
-        }
+        await supabase.rpc('increment_video_views', { video_id: videoId });
       } catch (error) {
         console.error('Error incrementing views:', error);
       }
     }
 
-    // Only track metrics every 5 seconds or when video completes
+    // Only track significant updates
     const shouldTrack = 
       completed || 
       !prevStatus?.isLoaded || 
-      Math.abs((prevStatus.positionMillis || 0) - positionMillis) >= 5000;
+      Math.abs((prevStatus?.positionMillis || 0) - positionMillis) >= 5000;
 
     if (!shouldTrack) {
       return;
     }
 
-    // Only log significant events
-    if (completed && !pendingUpdates.current.some(u => u.videoId === videoId && u.completed)) {
+    // Log completion events only once per video session
+    if (
+      completed && 
+      !hasLoggedCompletion.current.has(videoId) &&
+      !pendingUpdates.current.some(u => u.videoId === videoId && u.completed)
+    ) {
       console.log('Video completed:', videoId);
+      hasLoggedCompletion.current.add(videoId);
     }
 
+    // Add update to queue
     pendingUpdates.current.push({
       videoId,
       watchedSeconds,
       lastPosition: positionMillis,
       completed,
-      watchPercent,
-      retryCount: 0
+      watchPercent
     });
-
-    if (updateTimeout.current) {
-      clearTimeout(updateTimeout.current);
-    }
-
-    updateTimeout.current = setTimeout(processPendingUpdates, 1000);
-  }, [user?.id, processPendingUpdates]);
+  }, []); // No dependencies needed as we use refs
 
   return { trackVideoMetrics };
 } 
+
+
