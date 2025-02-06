@@ -66,6 +66,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="shopping_list"
+        options={{
+          title: 'Shopping',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="cart-outline" size={24} color={color} style={styles.tabIcon} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

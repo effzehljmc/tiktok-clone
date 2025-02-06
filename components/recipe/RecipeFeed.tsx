@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { SaveButton } from './SaveButton';
+import { useShoppingList } from '@/hooks/useShoppingList';
+import Toast from 'react-native-toast-message';
 
 type DifficultyLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 type DietaryPreference = 'VEGETARIAN' | 'VEGAN' | 'GLUTEN_FREE' | 'DAIRY_FREE';
@@ -210,6 +212,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  actionButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
 });
 
 export function RecipeFeed() {
@@ -219,6 +226,7 @@ export function RecipeFeed() {
   const [selectedVideo, setSelectedVideo] = useState<RecipeVideo | null>(null);
   const router = useRouter();
   const { user } = useAuth();
+  const { addToList, isAdding } = useShoppingList(user?.id || '');
 
   const { data: videos, isLoading } = useVideos({
     categories: FOOD_CATEGORIES,
@@ -321,6 +329,30 @@ export function RecipeFeed() {
   };
 
   const RecipeDetails = ({ recipe, onClose }: RecipeDetailsProps) => {
+    const handleAddToShoppingList = async () => {
+      if (!user) return;
+      
+      try {
+        await addToList(
+          recipe.ingredients.map(ingredient => ({
+            ingredient,
+            recipe_id: selectedVideo?.id
+          }))
+        );
+        Toast.show({
+          type: 'success',
+          text1: 'Added to shopping list',
+          text2: 'All ingredients have been added to your shopping list'
+        });
+      } catch (error) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to add ingredients to shopping list'
+        });
+      }
+    };
+
     return (
       <Modal
         visible={showRecipeDetails}
@@ -334,13 +366,26 @@ export function RecipeFeed() {
               <Text style={styles.modalTitle}>Recipe Details</Text>
               <View style={styles.modalActions}>
                 {user && selectedVideo && (
-                  <TouchableOpacity style={styles.saveButton}>
-                    <SaveButton
-                      videoId={selectedVideo.id}
-                      userId={user.id}
-                      size={24}
-                    />
-                  </TouchableOpacity>
+                  <>
+                    <TouchableOpacity 
+                      style={styles.actionButton}
+                      onPress={handleAddToShoppingList}
+                      disabled={isAdding}
+                    >
+                      <Ionicons 
+                        name="cart-outline" 
+                        size={24} 
+                        color={isAdding ? "#999" : "#666"} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.saveButton}>
+                      <SaveButton
+                        videoId={selectedVideo.id}
+                        userId={user.id}
+                        size={24}
+                      />
+                    </TouchableOpacity>
+                  </>
                 )}
                 <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                   <Ionicons name="close" size={24} color="#666" />

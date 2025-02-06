@@ -22,11 +22,24 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 - ✅ Recipe details modal with ingredients and steps
 - ✅ Cuisine type indicators
 - ✅ Dietary preference tags (Vegetarian, Vegan, etc.)
-- ⏳ Recipe search functionality
-- ⏳ Recipe filtering by dietary preferences
+- ✅ Shopping list integration with ingredient management
+- ✅ Recipe search functionality
+- ✅ Recipe filtering by dietary preferences
 - ⏳ Video timestamp jumping for recipe steps
-- ⏳ Recipe saving/bookmarking
-- ⏳ Recipe sharing functionality
+- ✅ Recipe saving/bookmarking
+- ✅ Recipe sharing functionality
+
+### Shopping List
+- ✅ Dedicated shopping list tab
+- ✅ Add ingredients from recipes
+- ✅ Check/uncheck items
+- ✅ Delete individual items
+- ✅ Clear checked items
+- ✅ Share list functionality
+- ✅ Quantity and unit parsing
+- ✅ Empty state handling
+- ✅ Toast notifications for actions
+- ✅ Loading and error states
 
 ### Comments System
 - ✅ Modal comments view with smooth animations
@@ -91,6 +104,21 @@ Video thumbnails are now managed manually through the database:
 - Enhance user profiles
 
 ## Recent Updates
+
+### Shopping List Integration (March 2024)
+- Added dedicated shopping list tab with modern UI
+- Implemented comprehensive shopping list management:
+  - Add ingredients directly from recipes
+  - Check/uncheck items for purchase tracking
+  - Delete individual items or clear checked items
+  - Share list via native share sheet
+  - Smart quantity and unit parsing
+- Enhanced UX with:
+  - Toast notifications for all actions
+  - Empty state messaging
+  - Loading and error states
+  - Safe area handling
+  - Proper keyboard interaction
 
 ### Recipe Integration (March 2024)
 - Added dedicated recipe feed with tab navigation

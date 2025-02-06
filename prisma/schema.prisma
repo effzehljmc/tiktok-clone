@@ -26,6 +26,7 @@ model User {
   videos    Video[]
   metrics   VideoMetrics[]
   savedRecipes SavedRecipe[]
+  shoppingList ShoppingList[]
 }
 
 model Video {
@@ -141,6 +142,24 @@ model SavedRecipe {
 
   @@unique([userId, videoId])
   @@map("saved_recipes")
+}
+
+model ShoppingList {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  ingredient  String
+  quantity    String?
+  unit        String?
+  isChecked   Boolean  @default(false) @map("is_checked")
+  recipeId    String?  @map("recipe_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe      Video?   @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([recipeId])
+  @@map("shopping_list")
 }
 
 enum VideoStatus {

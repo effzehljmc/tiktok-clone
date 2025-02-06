@@ -35,22 +35,14 @@ export function useVideoMetrics() {
   // Process pending updates with retry logic
   const processPendingUpdates = useCallback(async () => {
     if (!user?.id || pendingUpdates.current.length === 0) {
-      console.log('No updates to process or no user:', { 
-        userId: user?.id, 
-        pendingUpdates: pendingUpdates.current.length 
-      });
       return;
     }
-
-    console.log('Processing updates:', pendingUpdates.current);
 
     const updates = [...pendingUpdates.current];
     pendingUpdates.current = [];
 
     for (const update of updates) {
       try {
-        console.log('Sending update to Supabase:', update);
-        
         // First get current metrics to calculate new averages
         const { data: currentMetrics, error: fetchError } = await supabase
           .from('video_metrics')
@@ -86,14 +78,12 @@ export function useVideoMetrics() {
         if (error) {
           throw error;
         }
-        console.log('Successfully updated metrics for video:', update.videoId);
         
         // Reset replay counter after successful update
         videoStarts.current[update.videoId] = 0;
       } catch (error) {
         console.error('Error updating metrics:', error);
         if (update.retryCount < 3) {
-          console.log('Retrying update for video:', update.videoId);
           pendingUpdates.current.push({
             ...update,
             retryCount: update.retryCount + 1
@@ -103,7 +93,6 @@ export function useVideoMetrics() {
     }
 
     if (pendingUpdates.current.length > 0) {
-      console.log('Scheduling retry for remaining updates:', pendingUpdates.current.length);
       updateTimeout.current = setTimeout(processPendingUpdates, 5000);
     }
   }, [user?.id]);
@@ -114,10 +103,6 @@ export function useVideoMetrics() {
     prevStatus?: AVPlaybackStatus
   ) => {
     if (!status.isLoaded || !user?.id) {
-      console.log('Skipping metrics - video not loaded or no user:', { 
-        isLoaded: status.isLoaded, 
-        userId: user?.id 
-      });
       return;
     }
 
@@ -130,28 +115,16 @@ export function useVideoMetrics() {
     // Track video start/replay
     if (!prevStatus?.isLoaded && status.isLoaded) {
       videoStarts.current[videoId] = (videoStarts.current[videoId] || 0) + 1;
+      console.log('Video started:', videoId);
     }
-
-    console.log('Video status:', {
-      videoId,
-      position: positionMillis,
-      duration: durationMillis,
-      watchedSeconds,
-      completed,
-      watchPercent,
-      replays: videoStarts.current[videoId]
-    });
 
     // Track new view
     if (!viewedVideos.current.has(videoId)) {
-      console.log('New view detected for video:', videoId);
       viewedVideos.current.add(videoId);
       try {
         const { error } = await supabase.rpc('increment_video_views', { video_id: videoId });
         if (error) {
           console.error('Error incrementing views:', error);
-        } else {
-          console.log('Successfully incremented views for video:', videoId);
         }
       } catch (error) {
         console.error('Error incrementing views:', error);
@@ -165,21 +138,13 @@ export function useVideoMetrics() {
       Math.abs((prevStatus.positionMillis || 0) - positionMillis) >= 5000;
 
     if (!shouldTrack) {
-      console.log('Skipping update - too soon:', {
-        completed,
-        prevLoaded: prevStatus?.isLoaded,
-        timeDiff: Math.abs((prevStatus?.positionMillis || 0) - positionMillis)
-      });
       return;
     }
 
-    console.log('Adding update to queue:', {
-      videoId,
-      watchedSeconds,
-      lastPosition: positionMillis,
-      completed,
-      watchPercent
-    });
+    // Only log significant events
+    if (completed && !pendingUpdates.current.some(u => u.videoId === videoId && u.completed)) {
+      console.log('Video completed:', videoId);
+    }
 
     pendingUpdates.current.push({
       videoId,
