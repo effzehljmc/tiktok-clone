@@ -40,11 +40,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="inbox"
+        name="cookbook"
         options={{
-          title: 'Inbox',
+          title: 'Cookbook',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="mail-outline" size={24} color={color} style={styles.tabIcon} />
+            <Ionicons name="bookmark-outline" size={24} color={color} style={styles.tabIcon} />
           ),
         }}
       />

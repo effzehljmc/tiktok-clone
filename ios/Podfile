@@ -45,12 +45,54 @@ target 'tiktokclone' do
   )
 
   post_install do |installer|
+    # First apply React Native's post install
     react_native_post_install(
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
+
+    # Then configure all targets
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        # Explicitly disable coroutines for all C++ code
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_HAS_COROUTINES=0'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_NO_COROUTINES=1'
+        
+        # Special handling for RCT-Folly
+        if target.name == "RCT-Folly"
+          # Force C++17 for Folly
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+          
+          # Define Folly preprocessor macros without -D prefix
+          folly_flags = [
+            'FOLLY_NO_CONFIG=1',
+            'FOLLY_MOBILE=1',
+            'FOLLY_USE_LIBCPP=1',
+            'FOLLY_HAS_COROUTINES=0',
+            'FOLLY_NO_COROUTINES=1'
+          ]
+          
+          # Apply preprocessor definitions
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = ['$(inherited)'] + folly_flags
+          
+          # For OTHER_CPLUSPLUSFLAGS, we need the -D prefix
+          config.build_settings['OTHER_CPLUSPLUSFLAGS'] = ['$(inherited)'] + folly_flags.map { |f| "-D#{f}" }
+        end
+      end
+    end
+
+    # Override any potential C++20 settings from other scripts
+    installer.aggregate_targets.each do |aggregate_target|
+      aggregate_target.user_project.native_targets.each do |target|
+        target.build_configurations.each do |config|
+          # Ensure consistent C++ standard across the main project
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        end
+      end
+    end
 
     # This is necessary for Xcode 14, because it signs resource bundles by default
     # when building for devices.

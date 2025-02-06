@@ -6,6 +6,8 @@ import { useVideos, Video } from '@/hooks/useVideos';
 import { VideoCategory } from '@prisma/client';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/hooks/useAuth';
+import { SaveButton } from './SaveButton';
 
 type DifficultyLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 type DietaryPreference = 'VEGETARIAN' | 'VEGAN' | 'GLUTEN_FREE' | 'DAIRY_FREE';
@@ -38,7 +40,6 @@ interface VideoFeedProps {
 interface RecipeDetailsProps {
   recipe: RecipeMetadata;
   onClose: () => void;
-  onJumpToStep: (timestamp: number) => void;
 }
 
 const COOKING_CATEGORY = 'COOKING' as VideoCategory;
@@ -49,6 +50,7 @@ export function RecipeFeed() {
   const [showRecipeDetails, setShowRecipeDetails] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<RecipeVideo | null>(null);
   const router = useRouter();
+  const { user } = useAuth();
 
   const { data: videos } = useVideos({
     category: COOKING_CATEGORY,
@@ -120,54 +122,101 @@ export function RecipeFeed() {
     modalContainer: {
       flex: 1,
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end',
     },
     modalContent: {
       backgroundColor: 'white',
-      padding: 20,
-      borderRadius: 20,
-      width: '80%',
-      alignSelf: 'center',
+      padding: 0,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      width: '100%',
+      maxHeight: '90%',
     },
     modalHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: '#eee',
     },
     modalTitle: {
-      fontSize: 18,
+      fontSize: 24,
       fontWeight: 'bold',
+    },
+    modalActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
     },
     closeButton: {
-      padding: 10,
+      padding: 8,
+      borderRadius: 20,
+      backgroundColor: '#f5f5f5',
+    },
+    saveButton: {
+      padding: 8,
+      borderRadius: 20,
+      backgroundColor: '#f5f5f5',
     },
     sectionTitle: {
-      fontSize: 16,
+      fontSize: 20,
       fontWeight: 'bold',
-      marginBottom: 10,
+      marginBottom: 16,
+      marginTop: 24,
+      color: '#1a1a1a',
     },
     ingredientItem: {
-      marginBottom: 5,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+    },
+    bulletPoint: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: '#007AFF',
+      marginRight: 12,
+    },
+    ingredientText: {
+      fontSize: 16,
+      color: '#333',
+      flex: 1,
     },
     stepItem: {
       flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 10,
+      alignItems: 'flex-start',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: '#f0f0f0',
     },
     stepNumber: {
-      fontWeight: 'bold',
-      marginRight: 10,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: '#007AFF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+      marginTop: 2,
     },
-    stepDescription: {
+    stepNumberText: {
+      color: 'white',
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    stepContent: {
       flex: 1,
     },
-    jumpButton: {
-      padding: 10,
-      backgroundColor: '#007AFF',
-      borderRadius: 5,
+    stepDescription: {
+      fontSize: 16,
+      color: '#333',
+      lineHeight: 22,
     },
-    jumpButtonText: {
-      color: 'white',
-      fontWeight: 'bold',
+    scrollContent: {
+      padding: 16,
     },
   });
 
@@ -257,58 +306,68 @@ export function RecipeFeed() {
     );
   };
 
-  const RecipeDetails = ({ recipe, onClose, onJumpToStep }: RecipeDetailsProps) => (
-    <Modal
-      visible={showRecipeDetails}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Recipe Details</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView>
-            <Text style={styles.sectionTitle}>Ingredients</Text>
-            {recipe.ingredients.map((ingredient, index) => (
-              <Text key={index} style={styles.ingredientItem}>
-                • {ingredient}
-              </Text>
-            ))}
-
-            <Text style={styles.sectionTitle}>Equipment Needed</Text>
-            {recipe.equipment.map((item, index) => (
-              <Text key={index} style={styles.ingredientItem}>
-                • {item}
-              </Text>
-            ))}
-
-            <Text style={styles.sectionTitle}>Steps</Text>
-            {recipe.steps.map((step, index) => (
-              <View key={index} style={styles.stepItem}>
-                <Text style={styles.stepNumber}>{index + 1}.</Text>
-                <Text style={styles.stepDescription}>{step.description}</Text>
-                <TouchableOpacity
-                  style={styles.jumpButton}
-                  onPress={() => {
-                    onJumpToStep(step.timestamp);
-                    onClose();
-                  }}
-                >
-                  <Text style={styles.jumpButtonText}>Jump to Step</Text>
+  const RecipeDetails = ({ recipe, onClose }: RecipeDetailsProps) => {
+    return (
+      <Modal
+        visible={showRecipeDetails}
+        transparent
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Recipe Details</Text>
+              <View style={styles.modalActions}>
+                {user && selectedVideo && (
+                  <TouchableOpacity style={styles.saveButton}>
+                    <SaveButton
+                      videoId={selectedVideo.id}
+                      userId={user.id}
+                      size={24}
+                    />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                  <Ionicons name="close" size={24} color="#666" />
                 </TouchableOpacity>
               </View>
-            ))}
-          </ScrollView>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+              <Text style={styles.sectionTitle}>Ingredients</Text>
+              {recipe.ingredients.map((ingredient, index) => (
+                <View key={index} style={styles.ingredientItem}>
+                  <View style={styles.bulletPoint} />
+                  <Text style={styles.ingredientText}>{ingredient}</Text>
+                </View>
+              ))}
+
+              <Text style={styles.sectionTitle}>Equipment Needed</Text>
+              {recipe.equipment.map((item, index) => (
+                <View key={index} style={styles.ingredientItem}>
+                  <View style={styles.bulletPoint} />
+                  <Text style={styles.ingredientText}>{item}</Text>
+                </View>
+              ))}
+
+              <Text style={styles.sectionTitle}>Steps</Text>
+              {recipe.steps.map((step, index) => (
+                <View key={index} style={styles.stepItem}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>{index + 1}</Text>
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepDescription}>{step.description}</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </Modal>
-  );
+      </Modal>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -339,10 +398,6 @@ export function RecipeFeed() {
           onClose={() => {
             setShowRecipeDetails(false);
             setSelectedVideo(null);
-          }}
-          onJumpToStep={(timestamp) => {
-            // TODO: Implement jumping to specific timestamp in video
-            console.log('Jump to timestamp:', timestamp);
           }}
         />
       )}

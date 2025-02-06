@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VideoOverlay } from './VideoOverlay';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity, StatusBar, Platform } from 'react-native';
+import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity, StatusBar, Platform, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import Header from '../header';
 import { VideoCategory } from '@prisma/client';
 
@@ -18,13 +18,14 @@ interface VideoFeedProps {
 }
 
 export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true }: VideoFeedProps) {
-  const { data: videos, isLoading } = useVideos(category);
+  const { data: videos, isLoading } = useVideos(category ? { category } : undefined);
   const { trackVideoMetrics } = useVideoMetrics();
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [videoStatus, setVideoStatus] = useState<{ [key: string]: AVPlaybackStatus }>({});
   const windowHeight = Dimensions.get('window').height;
   const videoRefs = useRef<{ [key: string]: ExpoVideo | null }>({});
   const flatListRef = useRef<FlatList>(null);
+  const scrollingRef = useRef(false);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
@@ -50,7 +51,7 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
     },
     videoContainer: {
       width: '100%',
-      height: '100%',
+      height: windowHeight,
       backgroundColor: '#000',
     },
     video: {
@@ -108,14 +109,10 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
 
   // Effect to scroll to the video when videoId is provided
   useEffect(() => {
-    console.log('VideoFeed: videoId param changed:', videoId);
-    
     if (videoId && videos) {
       const index = videos.findIndex(video => video.id === videoId);
-      console.log('VideoFeed: found video at index:', index);
       
       if (index !== -1) {
-        console.log('VideoFeed: scrolling to video:', videoId, 'at index:', index);
         // Use requestAnimationFrame to ensure the scroll happens after any layout updates
         requestAnimationFrame(() => {
           flatListRef.current?.scrollToIndex({
@@ -125,11 +122,9 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
           });
           setActiveVideoIndex(index);
         });
-      } else {
-        console.log('VideoFeed: video not found in list:', videoId);
       }
     }
-  }, [videoId, videos]); // Re-run when either videoId or videos changes
+  }, [videoId, videos]);
 
   const handlePlayPause = useCallback(async (videoId: string) => {
     const video = videoRefs.current[videoId];
@@ -151,20 +146,25 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
     }
   }, [videoStatus]);
 
-  const handleScroll = useCallback((event: any) => {
+  const handleMomentumScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = event.nativeEvent.contentOffset.y;
     const index = Math.round(offsetY / windowHeight);
     
     if (index !== activeVideoIndex) {
       setActiveVideoIndex(index);
-      
-      // Ensure proper snapping
-      flatListRef.current?.scrollToOffset({
-        offset: index * windowHeight,
-        animated: true
-      });
     }
+    scrollingRef.current = false;
   }, [activeVideoIndex, windowHeight]);
+
+  const handleScrollBeginDrag = useCallback(() => {
+    scrollingRef.current = true;
+  }, []);
+
+  const getItemLayout = useCallback((_: ArrayLike<VideoType> | null | undefined, index: number) => ({
+    length: windowHeight,
+    offset: windowHeight * index,
+    index,
+  }), [windowHeight]);
 
   const handleShare = useCallback(async (video: VideoType) => {
     try {
@@ -197,14 +197,14 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
   }, [router]);
 
   const renderItem = useCallback(({ item, index }: ListRenderItemInfo<VideoType>) => (
-    <View style={[styles.videoContainer, { height: windowHeight }]}>
+    <View style={[styles.videoContainer]}>
       <ExpoVideo
         ref={(ref) => videoRefs.current[item.id] = ref}
         source={{ uri: item.url }}
         posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
         style={styles.video}
         resizeMode={ResizeMode.COVER}
-        shouldPlay={index === activeVideoIndex}
+        shouldPlay={index === activeVideoIndex && !scrollingRef.current}
         isLooping
         useNativeControls={false}
         onError={(error) => {
@@ -216,11 +216,6 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
             ...prev,
             [item.id]: status
           }));
-          
-          // Temporarily disable metrics tracking
-          // if (status.isLoaded) {
-          //   trackVideoMetrics(item.id, status, prevStatus);
-          // }
         }}
         progressUpdateIntervalMillis={500}
         shouldCorrectPitch={false}
@@ -248,50 +243,37 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
         />
       </TouchableOpacity>
     </View>
-  ), [activeVideoIndex, windowHeight, videoStatus, handlePlayPause, handleShare, handleCommentPress, handleProfilePress, renderVideoOverlay]);
+  ), [handlePlayPause, handleShare, handleCommentPress, handleProfilePress, insets.bottom, renderVideoOverlay, videoStatus, activeVideoIndex]);
 
-  if (isLoading) {
+  if (isLoading || !videos) {
     return (
-      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.centerContainer}>
-        <Text>Loading...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (!videos?.length) {
-    return (
-      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.centerContainer}>
-        <Text>Keine Videos verfügbar</Text>
-      </SafeAreaView>
+      <View style={styles.centerContainer}>
+        <Text style={{ color: 'white' }}>Loading...</Text>
+      </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Header color="white" showBackButton={false} showSearchIcon={showSearchIcon} />
       <FlatList
         ref={flatListRef}
         data={videos}
-        keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        keyExtractor={(item) => item.id}
         pagingEnabled
         showsVerticalScrollIndicator={false}
-        onMomentumScrollEnd={handleScroll}
-        onScrollEndDrag={handleScroll}
-        snapToInterval={windowHeight}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        getItemLayout={(_, index) => ({
-          length: windowHeight,
-          offset: windowHeight * index,
-          index,
-        })}
-        maxToRenderPerBatch={2}
-        windowSize={3}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScrollBeginDrag={handleScrollBeginDrag}
+        getItemLayout={getItemLayout}
+        initialNumToRender={3}
+        maxToRenderPerBatch={3}
+        windowSize={5}
         removeClippedSubviews={true}
-        initialNumToRender={1}
         contentContainerStyle={styles.flatListContent}
       />
+      {showSearchIcon && (
+        <Header />
+      )}
     </View>
   );
 } 

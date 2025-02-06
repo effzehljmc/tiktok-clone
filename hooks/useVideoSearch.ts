@@ -83,7 +83,7 @@ export function useVideoSearch({ query, category, dietaryPreference, enabled = t
 
         if (searchError) {
           console.error('Search error:', searchError);
-          throw new Error(searchError.message);
+          throw searchError;
         }
 
         if (!searchResults?.length) {
@@ -164,6 +164,10 @@ export function useVideoSearch({ query, category, dietaryPreference, enabled = t
         return transformedResults;
       } catch (error) {
         console.error('Search failed:', error);
+        // Check if it's a network error
+        if (error instanceof Error && error.message.includes('Network')) {
+          throw new Error('Network connection failed. Please check your internet connection and try again.');
+        }
         throw error;
       }
     },
@@ -174,5 +178,7 @@ export function useVideoSearch({ query, category, dietaryPreference, enabled = t
     },
     enabled: enabled && (!!query?.trim() || !!category || !!dietaryPreference),
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 3, // Retry failed requests 3 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 } 

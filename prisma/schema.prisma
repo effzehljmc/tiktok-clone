@@ -25,6 +25,7 @@ model User {
   likes     Like[]
   videos    Video[]
   metrics   VideoMetrics[]
+  savedRecipes SavedRecipe[]
 }
 
 model Video {
@@ -49,6 +50,7 @@ model Video {
   metrics       VideoMetrics[]
   creator       User           @relation(fields: [creatorId], references: [id])
   recipeMetadata RecipeMetadata?
+  savedBy       SavedRecipe[]
 
   @@index([creatorId])
   @@index([createdAt(sort: Desc)])
@@ -127,6 +129,18 @@ model RecipeMetadata {
 
   @@index([videoId])
   @@map("recipe_metadata")
+}
+
+model SavedRecipe {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()"))
+  userId    String   @map("user_id")
+  videoId   String   @map("video_id")
+  savedAt   DateTime @default(now()) @map("saved_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@map("saved_recipes")
 }
 
 enum VideoStatus {
