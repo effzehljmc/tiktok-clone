@@ -1,6 +1,6 @@
 import { Share } from 'react-native';
 import { Video as ExpoVideo, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
-import { useVideos, Video as VideoType } from '../../hooks/useVideos';
+import { Video as VideoType } from '../../hooks/useVideos';
 import { useVideoMetrics } from '../../hooks/useVideoMetrics';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,13 +12,12 @@ import Header from '../header';
 import { VideoCategory } from '@prisma/client';
 
 interface VideoFeedProps {
-  category?: VideoCategory;
+  videos: VideoType[];
   renderVideoOverlay?: (video: VideoType) => React.ReactNode;
   showSearchIcon?: boolean;
 }
 
-export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true }: VideoFeedProps) {
-  const { data: videos, isLoading } = useVideos(category ? { category } : undefined);
+export function VideoFeed({ videos, renderVideoOverlay, showSearchIcon = true }: VideoFeedProps) {
   const { trackVideoMetrics } = useVideoMetrics();
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [videoStatus, setVideoStatus] = useState<{ [key: string]: AVPlaybackStatus }>({});
@@ -245,7 +244,7 @@ export function VideoFeed({ category, renderVideoOverlay, showSearchIcon = true 
     </View>
   ), [handlePlayPause, handleShare, handleCommentPress, handleProfilePress, insets.bottom, renderVideoOverlay, videoStatus, activeVideoIndex]);
 
-  if (isLoading || !videos) {
+  if (!videos) {
     return (
       <View style={styles.centerContainer}>
         <Text style={{ color: 'white' }}>Loading...</Text>

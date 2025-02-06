@@ -36,6 +36,7 @@ export interface Video {
 
 interface UseVideosOptions {
   category?: VideoCategory;
+  categories?: VideoCategory[];
   difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   dietaryTag?: string;
 }
@@ -83,7 +84,7 @@ export function useVideos(options?: UseVideosOptions) {
   const { user } = useUser();
 
   return useQuery({
-    queryKey: ['videos', options?.category, options?.difficulty, options?.dietaryTag] as const,
+    queryKey: ['videos', options?.category, options?.categories, options?.difficulty, options?.dietaryTag] as const,
     queryFn: async () => {
       let query = supabase
         .from('videos')
@@ -128,7 +129,9 @@ export function useVideos(options?: UseVideosOptions) {
         .eq('status', 'PUBLISHED')
         .eq('is_private', false);
 
-      if (options?.category) {
+      if (options?.categories) {
+        query = query.in('category', options.categories);
+      } else if (options?.category) {
         query = query.eq('category', options.category);
       }
 

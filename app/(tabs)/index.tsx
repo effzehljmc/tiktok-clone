@@ -1,4 +1,4 @@
-import { StyleSheet, View, StatusBar } from 'react-native';
+import { StyleSheet, View, StatusBar, ActivityIndicator } from 'react-native';
 import { RecipeFeed } from '@/components/recipe/RecipeFeed';
 import { VideoFeed } from '@/components/video/VideoFeed';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,11 +8,22 @@ import { BlurView } from 'expo-blur';
 import { useState, useEffect } from 'react';
 import { TouchableOpacity } from 'react-native';
 import SearchOverlay from '@/components/search-overlay';
+import { useVideos } from '@/hooks/useVideos';
 
 const Tab = createMaterialTopTabNavigator();
 
 function ForYouTab() {
-  return <VideoFeed showSearchIcon={false} />;
+  const { data: videos, isLoading } = useVideos();
+
+  if (isLoading || !videos) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  return <VideoFeed videos={videos} showSearchIcon={false} />;
 }
 
 function RecipeTab() {
@@ -123,6 +134,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     padding: 8,
     borderRadius: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
   },
 });
 

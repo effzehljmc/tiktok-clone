@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Alert, StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, View, Text } from 'react-native'
 import { Button, Input } from '@rneui/themed'
 import { router } from 'expo-router'
 import { handleSignUp } from '../../utils/auth-hooks'
@@ -57,27 +57,36 @@ export default function SignUp() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Create Account</Text>
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Input
           label="Username"
-          leftIcon={{ type: 'font-awesome', name: 'user' }}
+          leftIcon={{ type: 'font-awesome', name: 'user', color: '#FFFFFF' }}
           onChangeText={setUsername}
           value={username}
           placeholder="username"
           autoCapitalize="none"
           disabled={loading}
+          inputStyle={styles.input}
+          labelStyle={styles.label}
+          placeholderTextColor="#666666"
+          inputContainerStyle={styles.inputContainer}
           errorStyle={{ height: 0 }}
         />
       </View>
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Input
           label="Email"
-          leftIcon={{ type: 'font-awesome', name: 'envelope' }}
+          leftIcon={{ type: 'font-awesome', name: 'envelope', color: '#FFFFFF' }}
           onChangeText={setEmail}
           value={email}
           placeholder="email@address.com"
           autoCapitalize="none"
           disabled={loading}
+          inputStyle={styles.input}
+          labelStyle={styles.label}
+          placeholderTextColor="#666666"
+          inputContainerStyle={styles.inputContainer}
           errorStyle={{ height: 0 }}
           keyboardType="email-address"
         />
@@ -85,29 +94,35 @@ export default function SignUp() {
       <View style={styles.verticallySpaced}>
         <Input
           label="Password"
-          leftIcon={{ type: 'font-awesome', name: 'lock' }}
+          leftIcon={{ type: 'font-awesome', name: 'lock', color: '#FFFFFF' }}
           onChangeText={setPassword}
           value={password}
           secureTextEntry
           placeholder="Password"
           autoCapitalize="none"
           disabled={loading}
+          inputStyle={styles.input}
+          labelStyle={styles.label}
+          placeholderTextColor="#666666"
+          inputContainerStyle={styles.inputContainer}
           errorStyle={{ height: 0 }}
         />
       </View>
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Button 
           title={loading ? "Creating Account..." : "Sign Up"} 
-          disabled={loading} 
+          disabled={loading}
           onPress={signUpWithEmail}
-          loading={loading}
+          buttonStyle={styles.button}
+          titleStyle={styles.buttonText}
+          disabledStyle={styles.buttonDisabled}
         />
       </View>
       <Button 
         type="clear" 
-        title="Back to Sign In" 
-        onPress={() => router.push('/')}
-        disabled={loading}
+        title="Already have an account? Sign In" 
+        onPress={() => router.replace('/')}
+        titleStyle={styles.linkText}
       />
     </View>
   )
@@ -115,8 +130,17 @@ export default function SignUp() {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 40,
-    padding: 12,
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 40,
+    textAlign: 'center',
   },
   verticallySpaced: {
     paddingTop: 4,
@@ -124,6 +148,35 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   mt20: {
+    marginTop: 20,
+  },
+  input: {
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  label: {
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  inputContainer: {
+    borderBottomColor: '#333333',
+    borderBottomWidth: 1,
+  },
+  button: {
+    backgroundColor: '#FF0050',
+    borderRadius: 8,
+    height: 50,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonDisabled: {
+    backgroundColor: '#333333',
+  },
+  linkText: {
+    color: '#FF0050',
+    fontSize: 14,
     marginTop: 20,
   },
 })

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, ScrollView, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { VideoFeed } from '../video/VideoFeed';
 import { useVideos, Video } from '@/hooks/useVideos';
 import { VideoCategory } from '@prisma/client';
@@ -33,7 +33,8 @@ interface RecipeInfoProps {
 }
 
 interface VideoFeedProps {
-  category?: VideoCategory;
+  videos: Video[];
+  showSearchIcon?: boolean;
   renderVideoOverlay?: (video: RecipeVideo) => React.ReactNode;
 }
 
@@ -42,7 +43,174 @@ interface RecipeDetailsProps {
   onClose: () => void;
 }
 
-const COOKING_CATEGORY = 'COOKING' as VideoCategory;
+const FOOD_CATEGORIES = ['DESSERT', 'DINNER', 'BREAKFAST', 'SNACKS'] as VideoCategory[];
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  filtersContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  filterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  filterButtonSelected: {
+    backgroundColor: '#007AFF',
+  },
+  filterText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  filterTextSelected: {
+    color: '#fff',
+  },
+  infoContainer: {
+    position: 'absolute',
+    bottom: 120,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 8,
+    padding: 12,
+  },
+  infoText: {
+    color: '#fff',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  difficultyBadge: {
+    position: 'absolute',
+    top: 100,
+    right: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    zIndex: 1,
+  },
+  difficultyText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    width: '100%',
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  closeButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  saveButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    marginTop: 24,
+    color: '#1a1a1a',
+  },
+  ingredientItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  bulletPoint: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#007AFF',
+    marginRight: 12,
+  },
+  ingredientText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  stepNumberText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepDescription: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 22,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
 export function RecipeFeed() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel | null>(null);
@@ -52,173 +220,19 @@ export function RecipeFeed() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const { data: videos } = useVideos({
-    category: COOKING_CATEGORY,
+  const { data: videos, isLoading } = useVideos({
+    categories: FOOD_CATEGORIES,
     difficulty: selectedDifficulty ?? undefined,
     dietaryTag: selectedDiet ?? undefined,
   });
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    filtersContainer: {
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      backgroundColor: '#fff',
-      borderBottomWidth: 1,
-      borderBottomColor: '#eee',
-    },
-    filterRow: {
-      flexDirection: 'row',
-      marginBottom: 8,
-    },
-    filterButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 16,
-      marginRight: 8,
-      backgroundColor: '#f0f0f0',
-    },
-    filterButtonSelected: {
-      backgroundColor: '#007AFF',
-    },
-    filterText: {
-      fontSize: 14,
-      color: '#333',
-    },
-    filterTextSelected: {
-      color: '#fff',
-    },
-    infoContainer: {
-      position: 'absolute',
-      bottom: 120,
-      left: 16,
-      right: 16,
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      borderRadius: 8,
-      padding: 12,
-    },
-    infoText: {
-      color: '#fff',
-      fontSize: 14,
-      marginBottom: 4,
-    },
-    difficultyBadge: {
-      position: 'absolute',
-      top: 100,
-      right: 16,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 4,
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      zIndex: 1,
-    },
-    difficultyText: {
-      color: '#fff',
-      fontSize: 12,
-      fontWeight: 'bold',
-    },
-    modalContainer: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-end',
-    },
-    modalContent: {
-      backgroundColor: 'white',
-      padding: 0,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      width: '100%',
-      maxHeight: '90%',
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: '#eee',
-    },
-    modalTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
-    },
-    modalActions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    closeButton: {
-      padding: 8,
-      borderRadius: 20,
-      backgroundColor: '#f5f5f5',
-    },
-    saveButton: {
-      padding: 8,
-      borderRadius: 20,
-      backgroundColor: '#f5f5f5',
-    },
-    sectionTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 16,
-      marginTop: 24,
-      color: '#1a1a1a',
-    },
-    ingredientItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-    },
-    bulletPoint: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: '#007AFF',
-      marginRight: 12,
-    },
-    ingredientText: {
-      fontSize: 16,
-      color: '#333',
-      flex: 1,
-    },
-    stepItem: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: '#f0f0f0',
-    },
-    stepNumber: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: '#007AFF',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 12,
-      marginTop: 2,
-    },
-    stepNumberText: {
-      color: 'white',
-      fontSize: 14,
-      fontWeight: 'bold',
-    },
-    stepContent: {
-      flex: 1,
-    },
-    stepDescription: {
-      fontSize: 16,
-      color: '#333',
-      lineHeight: 22,
-    },
-    scrollContent: {
-      padding: 16,
-    },
-  });
+  if (isLoading || !videos) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
 
   const DifficultyFilter = () => (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
@@ -376,7 +390,7 @@ export function RecipeFeed() {
         <DietaryFilter />
       </View>
       <VideoFeed
-        category={COOKING_CATEGORY}
+        videos={videos}
         showSearchIcon={false}
         renderVideoOverlay={(video: Video) => {
           const recipeVideo = video as RecipeVideo;
