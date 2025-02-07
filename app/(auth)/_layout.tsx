@@ -1,15 +1,18 @@
-import { Stack, router } from 'expo-router';
+import { Stack } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function AuthLayout() {
-  const { user } = useAuth();
+  const { loading } = useAuth();
 
-  useEffect(() => {
-    if (user) {
-      router.replace('/(tabs)');
-    }
-  }, [user]);
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <Stack>

@@ -1,7 +1,5 @@
 import { supabase } from './supabase'
-import { router } from 'expo-router'
 import { AuthError } from '@supabase/supabase-js'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface AuthResponse {
   error: AuthError | null;
@@ -14,14 +12,12 @@ export async function handleSignUp(
   username: string
 ): Promise<AuthResponse> {
   try {
-    // First check if username is already taken
     const { data: existingUser, error: checkError } = await supabase
       .from('User')
       .select('username')
       .eq('username', username)
       .single();
 
-    // Only treat it as an existing user if we got actual data back
     if (existingUser && !checkError) {
       return {
         error: {
@@ -31,7 +27,6 @@ export async function handleSignUp(
       };
     }
 
-    // Sign up the user
     const { data: { user }, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -63,19 +58,6 @@ export async function handleSignUp(
   }
 }
 
-// Add this to handle email verification
-export async function handleEmailVerification() {
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return;
-
-    // Now redirect to the main app
-    router.replace('/(tabs)');
-  } catch (error) {
-    console.error('Error handling email verification:', error);
-  }
-}
-
 // Helper function to check network connectivity
 async function checkNetworkConnection(): Promise<boolean> {
   try {
@@ -88,43 +70,8 @@ async function checkNetworkConnection(): Promise<boolean> {
   }
 }
 
-// Modify handleSignIn to use this
-export async function handleSignIn(email: string, password: string): Promise<AuthResponse> {
-  try {
-    const { data: { session }, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) {
-      console.error('Sign in error:', error);
-      throw error;
-    }
-
-    if (!session) {
-      return {
-        error: {
-          name: 'AuthError',
-          message: 'No session after login. Please try again.'
-        } as AuthError
-      }
-    }
-    
-    // Now we can redirect
-    router.replace('/(tabs)');
-    return { error: null }
-  } catch (error) {
-    console.error('Error in signin process:', error);
-    return { error: error as AuthError }
-  }
-}
-
 // Also add a function to check if user is authenticated
 export async function checkAuth() {
   const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    router.replace('/(tabs)');
-  } else {
-    router.replace('/(auth)');
-  }
+  return { isAuthenticated: !!session, session };
 } 

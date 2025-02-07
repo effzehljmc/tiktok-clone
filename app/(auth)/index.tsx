@@ -2,29 +2,22 @@ import { useState } from 'react'
 import { Alert, StyleSheet, View, Text } from 'react-native'
 import { Button, Input } from '@rneui/themed'
 import { router } from 'expo-router'
-import { handleSignIn } from '../../utils/auth-hooks'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const { signIn } = useAuth()
 
   async function signInWithEmail() {
     setLoading(true)
     try {
-      const { error } = await handleSignIn(email, password)
-      
-      if (error) {
-        Alert.alert(
-          'Login Failed',
-          error.message || 'Invalid login credentials. Please check your email and password.',
-          [{ text: 'OK' }]
-        )
-      }
-    } catch (error) {
+      await signIn(email, password)
+    } catch (error: any) {
       Alert.alert(
-        'Error',
-        'A network error occurred. Please check your connection and try again.',
+        'Login Failed',
+        error.message || 'Invalid login credentials. Please check your email and password.',
         [{ text: 'OK' }]
       )
       console.error('Sign in error:', error)
