@@ -1,0 +1,1 @@
+PROJ_FILE="tiktokclone.xcodeproj/project.pbxproj"; /usr/libexec/PlistBuddy -c "Set :objects:13B07F871A680F5B00A75B9A:buildSettings:CLANG_CXX_LANGUAGE_STANDARD \$(inherited)" "$PROJ_FILE"; /usr/libexec/PlistBuddy -c "Set :objects:13B07F861A680F5B00A75B9A:buildSettings:CLANG_CXX_LANGUAGE_STANDARD \$(inherited)" "$PROJ_FILE"
