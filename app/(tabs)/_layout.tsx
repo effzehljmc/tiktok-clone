@@ -57,6 +57,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="personalized"
+        options={{
+          title: 'Personal',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="sparkles-outline" size={24} color={color} style={styles.tabIcon} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="recipe"
         options={{
           title: 'Recipe',

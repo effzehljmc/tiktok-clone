@@ -1,26 +1,35 @@
+import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SaveButton } from './SaveButton';
 import { useAuth } from '@/hooks/useAuth';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import Toast from 'react-native-toast-message';
+import { Recipe } from '@/types/recipe';
+import { RecipeChat } from './RecipeChat';
 
 interface RecipeDetailsProps {
   isVisible: boolean;
   onClose: () => void;
-  recipe: {
-    id: string;
-    title: string;
-    ingredients: string[];
-    equipment: string[];
-    steps: { timestamp: number; description: string; }[];
-  };
+  recipe: Recipe;
 }
 
 export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps) {
   const { user } = useAuth();
   const { addToList, isAdding } = useShoppingList(user?.id || '');
+  const [isChatVisible, setIsChatVisible] = useState(false);
   
+  useEffect(() => {
+    console.log('RecipeDetails mounted');
+    console.log('Recipe:', recipe);
+    console.log('isVisible:', isVisible);
+    console.log('User:', user);
+  }, []);
+
+  useEffect(() => {
+    console.log('Chat visibility changed:', isChatVisible);
+  }, [isChatVisible]);
+
   const handleAddToShoppingList = async () => {
     if (!user) return;
     
@@ -45,6 +54,13 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
     }
   };
   
+  const handleChatPress = () => {
+    console.log('Chat button pressed');
+    console.log('Current isChatVisible:', isChatVisible);
+    setIsChatVisible(true);
+    console.log('Set isChatVisible to true');
+  };
+
   return (
     <Modal
       animationType="slide"
@@ -52,33 +68,42 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
       visible={isVisible}
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-white">
-        <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+      <View 
+        className="flex-1 bg-white"
+        onLayout={() => console.log('Main View rendered')}
+      >
+        <View 
+          className="flex-row justify-between items-center p-4 border-b border-gray-200"
+          onLayout={() => console.log('Header View rendered')}
+        >
           <Text className="text-2xl font-bold flex-1">Recipe Details</Text>
-          <View className="flex-row items-center gap-4">
+          <View 
+            className="flex-row items-center gap-6"
+            onLayout={() => console.log('Icons container rendered')}
+          >
             {user && (
-              <>
-                <TouchableOpacity 
-                  className="p-2"
-                  onPress={handleAddToShoppingList}
-                  disabled={isAdding}
-                >
-                  <Ionicons 
-                    name="cart-outline" 
-                    size={28} 
-                    color={isAdding ? "gray" : "black"} 
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity className="p-2">
-                  <SaveButton 
-                    videoId={recipe.id} 
-                    userId={user.id} 
-                    size={28} 
-                  />
-                </TouchableOpacity>
-              </>
+              <TouchableOpacity 
+                className="p-3"
+                onPress={handleAddToShoppingList}
+                disabled={isAdding}
+              >
+                <Ionicons 
+                  name="cart-outline" 
+                  size={28} 
+                  color={isAdding ? "gray" : "black"} 
+                />
+              </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={onClose} className="p-2">
+            {user && (
+              <TouchableOpacity className="p-3">
+                <SaveButton 
+                  videoId={recipe.id} 
+                  userId={user.id} 
+                  size={28} 
+                />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={onClose} className="p-3">
               <Ionicons name="close" size={28} color="black" />
             </TouchableOpacity>
           </View>
@@ -109,6 +134,12 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
             ))}
           </View>
         </ScrollView>
+
+        <RecipeChat 
+          isVisible={isChatVisible}
+          onClose={() => setIsChatVisible(false)}
+          recipe={recipe}
+        />
       </View>
     </Modal>
   );

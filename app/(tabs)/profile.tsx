@@ -8,6 +8,8 @@ import { supabase } from '@/utils/supabase';
 import { useState } from 'react';
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
+import { Button } from '@rneui/themed';
+import { router } from 'expo-router';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
@@ -109,10 +111,15 @@ export default function ProfileScreen() {
           <Text style={styles.title}>
             {user.username || 'Profile'}
           </Text>
-          <TouchableOpacity onPress={signOut} style={styles.logoutButton}>
-            <Ionicons name="log-out-outline" size={24} color="#000" />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity style={styles.logoutButton}>
+              <Ionicons name="chatbox-outline" size={24} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={signOut} style={styles.logoutButton}>
+              <Ionicons name="log-out-outline" size={24} color="#000" />
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.profileInfo}>
@@ -140,6 +147,12 @@ export default function ProfileScreen() {
           <Text style={styles.username}>{user.username}</Text>
           <Text style={styles.email}>{user.email}</Text>
         </View>
+
+        <Button
+          title="Test AI Recipe Assistant"
+          onPress={() => router.push('/tests/ai-agent')}
+          containerStyle={{ marginBottom: 16 }}
+        />
       </View>
     </SafeAreaView>
   );
