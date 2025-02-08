@@ -17,6 +17,8 @@ model User {
   email         String    @unique
   avatarUrl     String?   @map("avatar_url")
   bio           String?
+  dietTags      String[]  @default([]) @map("diet_tags")
+  dislikedIngredients String[] @default([]) @map("disliked_ingredients")
   createdAt     DateTime  @default(now()) @map("created_at")
   videos        Video[]
   likes         Like[]

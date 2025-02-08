@@ -1,9 +1,26 @@
 import React, { useCallback } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { VideoCategory } from '@prisma/client';
 import { useVideoSearch } from '../../hooks/useVideoSearch';
-import { formatDistanceToNow, parseISO } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
+import { Image } from 'expo-image';
+import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
+
+const COLORS = {
+  background: '#000000',
+  surface: '#121212',
+  surfaceLight: '#1a1a1a',
+  cardBackground: '#1e1e1e',
+  primary: '#2563eb',
+  white: '#ffffff',
+  whiteAlpha90: 'rgba(255,255,255,0.9)',
+  whiteAlpha60: 'rgba(255,255,255,0.6)',
+  whiteAlpha30: 'rgba(255,255,255,0.3)',
+  whiteAlpha10: 'rgba(255,255,255,0.1)',
+  whiteAlpha05: 'rgba(255,255,255,0.05)',
+} as const;
 
 interface SearchResultsProps {
   query: string;
@@ -24,26 +41,10 @@ export default function SearchResults({ query, category, dietaryPreference, onCl
     error
   } = useVideoSearch({ query, category, dietaryPreference });
 
-  console.log('SearchResults render:', {
-    query,
-    category,
-    dietaryPreference,
-    hasData: !!data,
-    pageCount: data?.pages.length,
-    isLoading,
-    isError,
-    error,
-    rawData: data?.pages
-  });
-
   const allVideos = data?.pages.flat() ?? [];
-  console.log('All videos:', allVideos);
 
   const handleVideoPress = useCallback((videoId: string) => {
-    console.log('Video pressed:', videoId);
-    // First close the overlay
     onClose();
-    // Use setTimeout to ensure the overlay is closed before navigation
     setTimeout(() => {
       router.replace({
         pathname: "/",
@@ -53,117 +54,210 @@ export default function SearchResults({ query, category, dietaryPreference, onCl
   }, [router, onClose]);
 
   const formatDate = (dateString: string | undefined) => {
-    if (!dateString) {
-      console.log('No date string provided');
-      return 'some time ago';
-    }
-    
+    if (!dateString) return 'some time ago';
     try {
       const date = new Date(dateString);
       return formatDistanceToNow(date, { addSuffix: true });
     } catch (error) {
-      console.error('Error formatting date:', error, { dateString });
       return 'some time ago';
     }
   };
 
   if (isLoading) {
-    console.log('Showing loading state');
     return (
-      <View className="flex-1 items-center justify-center p-4">
-        <ActivityIndicator size="large" />
+      <View style={styles.centerContainer}>
+        <ActivityIndicator color={COLORS.primary} size="large" />
       </View>
     );
   }
 
   if (isError) {
-    console.error('Search error:', error);
     return (
-      <View className="flex-1 items-center justify-center p-4">
-        <Text className="text-red-500">Failed to load search results</Text>
-        <Text className="text-gray-500 text-sm mt-2">{error?.message}</Text>
+      <View style={styles.centerContainer}>
+        <Ionicons name="alert-circle-outline" size={48} color={COLORS.whiteAlpha30} />
+        <Text style={styles.errorTitle}>Failed to load search results</Text>
+        <Text style={styles.errorSubtitle}>{error?.message}</Text>
       </View>
     );
   }
 
   if (!allVideos || allVideos.length === 0) {
-    console.log('No videos found');
     return (
-      <View className="flex-1 items-center justify-center p-4">
-        <Text className="text-gray-500">No videos found</Text>
-        <Text className="text-gray-400 text-sm mt-2">
+      <View style={styles.centerContainer}>
+        <Ionicons name="search-outline" size={48} color={COLORS.whiteAlpha30} />
+        <Text style={styles.emptyTitle}>No videos found</Text>
+        <Text style={styles.emptySubtitle}>
           Try a different search term{category ? ' or category' : ''}
         </Text>
       </View>
     );
   }
 
-  console.log('Rendering video list with:', allVideos.length, 'videos');
-
   return (
-    <View className="flex-1 bg-white" style={{ minHeight: 200 }}>
+    <View style={styles.container}>
       <FlatList
         data={allVideos}
         keyExtractor={(item) => item.id}
-        className="flex-1"
-        contentContainerStyle={{ 
-          paddingBottom: 20,
-          flexGrow: 1
-        }}
+        contentContainerStyle={styles.listContent}
         onEndReached={() => {
           if (hasNextPage && !isFetchingNextPage) {
-            console.log('Loading next page');
             fetchNextPage();
           }
         }}
         onEndReachedThreshold={0.5}
         ListFooterComponent={() => (
           isFetchingNextPage ? (
-            <View className="py-4">
-              <ActivityIndicator />
+            <View style={styles.loadingFooter}>
+              <ActivityIndicator color={COLORS.primary} />
             </View>
           ) : null
         )}
-        renderItem={({ item }) => {
-          console.log('Rendering video item:', item);
-          return (
-            <TouchableOpacity
-              key={item.id}
-              className="flex-row p-4 border-b border-gray-200 bg-white active:bg-gray-100"
-              onPress={() => handleVideoPress(item.id)}
-            >
-              <View className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.resultCard}
+            onPress={() => handleVideoPress(item.id)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.cardContent}>
+              <View style={styles.thumbnailContainer}>
                 <Image
-                  source={{ uri: item.thumbnailUrl || undefined }}
-                  className="w-full h-full"
-                  resizeMode="cover"
+                  source={item.thumbnailUrl || undefined}
+                  style={styles.thumbnail}
+                  contentFit="cover"
+                  transition={200}
                 />
               </View>
-              <View className="flex-1 ml-4 justify-between">
+              <View style={styles.textContent}>
                 <View>
-                  <Text className="font-medium text-base text-gray-900" numberOfLines={2}>
+                  <Text style={styles.title} numberOfLines={2}>
                     {item.title}
                   </Text>
                   {item.description && (
-                    <Text className="text-gray-500 text-sm mt-1" numberOfLines={2}>
+                    <Text style={styles.description} numberOfLines={2}>
                       {item.description}
                     </Text>
                   )}
                 </View>
-                <View className="flex-row items-center mt-2">
-                  <Text className="text-gray-500 text-xs">
-                    {formatDate(item.createdAt)}
-                  </Text>
-                  <Text className="text-gray-500 text-xs mx-2">•</Text>
-                  <Text className="text-gray-500 text-xs">
-                    {item.viewsCount} {item.viewsCount === 1 ? 'view' : 'views'}
-                  </Text>
+                <View style={styles.metaContainer}>
+                  <View style={styles.stat}>
+                    <Ionicons name="time-outline" size={14} color={COLORS.whiteAlpha60} />
+                    <Text style={styles.metaText}>
+                      {formatDate(item.createdAt)}
+                    </Text>
+                  </View>
+                  <View style={styles.stat}>
+                    <Ionicons name="eye-outline" size={14} color={COLORS.whiteAlpha60} />
+                    <Text style={styles.metaText}>
+                      {item.viewsCount} {item.viewsCount === 1 ? 'view' : 'views'}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </TouchableOpacity>
-          );
-        }}
+            </View>
+          </TouchableOpacity>
+        )}
       />
     </View>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    backgroundColor: COLORS.background,
+  },
+  listContent: {
+    padding: 16,
+  },
+  loadingFooter: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  resultCard: {
+    marginBottom: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: COLORS.cardBackground,
+    borderWidth: 1,
+    borderColor: COLORS.whiteAlpha10,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    padding: 12,
+  },
+  thumbnailContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: COLORS.whiteAlpha05,
+  },
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  textContent: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'space-between',
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.whiteAlpha90,
+    marginBottom: 4,
+  },
+  description: {
+    fontSize: 14,
+    color: COLORS.whiteAlpha60,
+    lineHeight: 18,
+  },
+  metaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 6,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 13,
+    color: COLORS.whiteAlpha60,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.whiteAlpha90,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorSubtitle: {
+    fontSize: 15,
+    color: COLORS.whiteAlpha60,
+    textAlign: 'center',
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.whiteAlpha90,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    color: COLORS.whiteAlpha60,
+    textAlign: 'center',
+  },
+}); 

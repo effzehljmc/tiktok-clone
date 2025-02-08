@@ -4,6 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoCategory } from '@prisma/client';
 import SearchResults from '@/components/search/SearchResults';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// Shared color scheme
+const COLORS = {
+  background: '#000000',
+  surface: '#121212',
+  surfaceLight: '#1a1a1a',
+  primary: '#2563eb',
+  white: '#ffffff',
+  whiteAlpha90: 'rgba(255,255,255,0.9)',
+  whiteAlpha60: 'rgba(255,255,255,0.6)',
+  whiteAlpha30: 'rgba(255,255,255,0.3)',
+  whiteAlpha10: 'rgba(255,255,255,0.1)',
+  whiteAlpha05: 'rgba(255,255,255,0.05)',
+} as const;
 
 // Recipe categories mapped to VideoCategory
 const RECIPE_CATEGORIES = [
@@ -41,116 +56,204 @@ export default function ExploreScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-white">
-      {/* Search Header */}
-      <View className="px-4 pt-2 pb-0">
-        <Text className="text-2xl font-bold mb-4">Explore</Text>
-        <View className="flex-row items-center bg-gray-100 rounded-full px-4 py-2 mb-2">
-          <Ionicons name="search" size={20} color="gray" />
-          <TextInput
-            className="flex-1 ml-2 text-base"
-            placeholder="Search recipes..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-            clearButtonMode="while-editing"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="off"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={handleClearSearch}>
-              <Ionicons name="close-circle" size={20} color="gray" />
-            </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <LinearGradient
+        colors={[COLORS.surfaceLight, COLORS.background]}
+        style={styles.container}
+      >
+        {/* Search Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Explore</Text>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color={COLORS.whiteAlpha60} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search recipes..."
+              placeholderTextColor={COLORS.whiteAlpha30}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={handleClearSearch}>
+                <Ionicons name="close-circle" size={20} color={COLORS.whiteAlpha60} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Recipe Categories */}
+        <View>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.scrollContainer}
+          >
+            {RECIPE_CATEGORIES.map((category) => (
+              <TouchableOpacity
+                key={category}
+                onPress={() => handleCategorySelect(category)}
+                style={[
+                  styles.categoryButton,
+                  selectedCategory === category && styles.categoryButtonSelected
+                ]}
+              >
+                <Text style={[
+                  styles.categoryButtonText,
+                  selectedCategory === category && styles.categoryButtonTextSelected
+                ]}>
+                  {category.split('_').map(word => 
+                    word.charAt(0) + word.slice(1).toLowerCase()
+                  ).join(' ')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Dietary Preferences */}
+        <View>
+          <Text style={styles.sectionTitle}>Dietary Preferences</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.scrollContainer}
+          >
+            {DIETARY_PREFERENCES.map((diet) => (
+              <TouchableOpacity
+                key={diet}
+                onPress={() => handleDietSelect(diet)}
+                style={[
+                  styles.categoryButton,
+                  selectedDiet === diet && styles.categoryButtonSelected
+                ]}
+              >
+                <Text style={[
+                  styles.categoryButtonText,
+                  selectedDiet === diet && styles.categoryButtonTextSelected
+                ]}>
+                  {diet.split('_').map(word => 
+                    word.charAt(0) + word.slice(1).toLowerCase()
+                  ).join(' ')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Search Results or Empty State */}
+        <View style={styles.resultsContainer}>
+          {searchQuery.trim() || selectedCategory || selectedDiet ? (
+            <SearchResults 
+              query={searchQuery.trim()} 
+              category={selectedCategory}
+              dietaryPreference={selectedDiet}
+              onClose={() => {}} // We don't need to close anything in the explore page
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search-outline" size={48} color={COLORS.whiteAlpha30} />
+              <Text style={styles.emptyTitle}>
+                Search for recipes by title, description, or tags
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                Or browse by category and dietary preferences
+              </Text>
+            </View>
           )}
         </View>
-      </View>
-
-      {/* Recipe Categories */}
-      <View>
-        <Text className="px-4 py-2 text-base font-semibold text-gray-600">Categories</Text>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          className="px-4 py-2"
-        >
-          {RECIPE_CATEGORIES.map((category) => (
-            <TouchableOpacity
-              key={category}
-              onPress={() => handleCategorySelect(category)}
-              className={`px-4 py-2 mr-2 rounded-full ${
-                selectedCategory === category 
-                  ? 'bg-black' 
-                  : 'bg-gray-100'
-              }`}
-            >
-              <Text className={`${
-                selectedCategory === category 
-                  ? 'text-white' 
-                  : 'text-gray-600'
-              }`}>
-                {category.split('_').map(word => 
-                  word.charAt(0) + word.slice(1).toLowerCase()
-                ).join(' ')}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Dietary Preferences */}
-      <View>
-        <Text className="px-4 py-2 text-base font-semibold text-gray-600">Dietary Preferences</Text>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          className="px-4 py-2"
-        >
-          {DIETARY_PREFERENCES.map((diet) => (
-            <TouchableOpacity
-              key={diet}
-              onPress={() => handleDietSelect(diet)}
-              className={`px-4 py-2 mr-2 rounded-full ${
-                selectedDiet === diet 
-                  ? 'bg-black' 
-                  : 'bg-gray-100'
-              }`}
-            >
-              <Text className={`${
-                selectedDiet === diet 
-                  ? 'text-white' 
-                  : 'text-gray-600'
-              }`}>
-                {diet.split('_').map(word => 
-                  word.charAt(0) + word.slice(1).toLowerCase()
-                ).join(' ')}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Search Results or Empty State */}
-      <View className="flex-1">
-        {searchQuery.trim() || selectedCategory || selectedDiet ? (
-          <SearchResults 
-            query={searchQuery.trim()} 
-            category={selectedCategory}
-            dietaryPreference={selectedDiet}
-            onClose={() => {}} // We don't need to close anything in the explore page
-          />
-        ) : (
-          <View className="flex-1 items-center justify-center p-8">
-            <Ionicons name="search-outline" size={48} color="gray" />
-            <Text className="text-gray-500 text-center mt-4">
-              Search for recipes by title, description, or tags
-            </Text>
-            <Text className="text-gray-400 text-center mt-2">
-              Or browse by category and dietary preferences
-            </Text>
-          </View>
-        )}
-      </View>
+      </LinearGradient>
     </SafeAreaView>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: COLORS.white,
+    letterSpacing: 0.5,
+    marginBottom: 16,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.whiteAlpha05,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+    color: COLORS.white,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.whiteAlpha90,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  scrollContainer: {
+    paddingHorizontal: 16,
+  },
+  categoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    backgroundColor: COLORS.whiteAlpha05,
+  },
+  categoryButtonSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  categoryButtonText: {
+    color: COLORS.whiteAlpha60,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  categoryButtonTextSelected: {
+    color: COLORS.white,
+  },
+  resultsContainer: {
+    flex: 1,
+    marginTop: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.whiteAlpha90,
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    color: COLORS.whiteAlpha60,
+    textAlign: 'center',
+  },
+}); 

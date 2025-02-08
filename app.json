@@ -10,7 +10,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lukasmchagas.tiktok-clone"
+      "bundleIdentifier": "com.lukasmchagas.tiktok-clone",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone for voice commands.",
+        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to access speech recognition to convert your voice commands into text.",
+        "NSVoiceRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to access voice recognition to understand your voice commands."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -35,7 +40,20 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice commands."
+        }
+      ],
+      [
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice commands.",
+          "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to access speech recognition to convert your voice commands into text."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

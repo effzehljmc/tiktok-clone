@@ -8,6 +8,8 @@ interface User {
   email: string;
   username: string | null;
   image?: string;
+  diet_tags?: string[];
+  disliked_ingredients?: string[];
 }
 
 interface AuthContextType {
@@ -17,6 +19,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
   getUser: (userId: string) => Promise<User | null>;
+  updatePreferences: (preferences: { diet_tags?: string[]; disliked_ingredients?: string[] }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,6 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   signUp: async () => {},
   signOut: async () => {},
   getUser: async () => null,
+  updatePreferences: async () => {},
 });
 
 export function useAuth() {
@@ -124,6 +128,32 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     }
   }
 
+  async function updatePreferences(preferences: { diet_tags?: string[]; disliked_ingredients?: string[] }) {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('User')
+        .update({
+          diet_tags: preferences.diet_tags ?? user.diet_tags ?? [],
+          disliked_ingredients: preferences.disliked_ingredients ?? user.disliked_ingredients ?? []
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local user state
+      setUser(prev => prev ? {
+        ...prev,
+        diet_tags: preferences.diet_tags ?? prev.diet_tags,
+        disliked_ingredients: preferences.disliked_ingredients ?? prev.disliked_ingredients
+      } : null);
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      throw error;
+    }
+  }
+
   const value = {
     user,
     loading,
@@ -131,6 +161,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     signUp,
     signOut,
     getUser,
+    updatePreferences,
   };
 
   return React.createElement(AuthContext.Provider, { value }, children);

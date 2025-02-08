@@ -9,6 +9,7 @@ import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutRight } from 'react-na
 import { useAuth } from '@/hooks/useAuth';
 import { type RecipeMetadata } from '@prisma/client';
 import Toast from 'react-native-toast-message';
+import { VoiceButton } from '@/components/voice/VoiceButton';
 
 type VariationType = 'DIETARY' | 'INGREDIENT_SUBSTITUTION' | 'PORTION_ADJUSTMENT' | 'COOKING_METHOD' | 'FLAVOR_PROFILE';
 
@@ -452,6 +453,10 @@ export function RecipeChat({ isVisible, onClose, recipe, onVariationCreated }: R
                 multiline
                 numberOfLines={1}
                 editable={!isLoading}
+              />
+              <VoiceButton
+                onRecognized={text => setPrompt(text)}
+                disabled={isLoading}
               />
               <TouchableOpacity
                 onPress={handleSubmit}

@@ -4,7 +4,8 @@ require File.join(File.dirname(`node --print "require.resolve('react-native/pack
 require 'json'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 
-ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
+# Force disable new architecture for now
+ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
 
 platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
@@ -45,7 +46,6 @@ target 'tiktokclone' do
   )
 
   post_install do |installer|
-    # First apply React Native's post install
     react_native_post_install(
       installer,
       config[:reactNativePath],
@@ -53,47 +53,62 @@ target 'tiktokclone' do
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
 
-    # Then configure all targets
+    # Add Yoga header search paths
     installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        # Explicitly disable coroutines for all C++ code
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_HAS_COROUTINES=0'
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_NO_COROUTINES=1'
-        
-        # Set C++20 as default for all targets
-        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++20'
-        
-        # Special handling for hash_combine.h
-        if target.name.start_with?('React-utils')
-          config.build_settings['OTHER_CPLUSPLUSFLAGS'] = '$(inherited) -std=c++17'
+      if target.name == 'Yoga'
+        target.build_configurations.each do |config|
+          config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/Headers/Public/Yoga'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/Headers/Private/Yoga'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/../node_modules/react-native/ReactCommon/yoga'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/../node_modules/react-native/ReactCommon'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_TARGET_SRCROOT)/yoga'
         end
-        
-        # Special handling for RCT-Folly
-        if target.name == "RCT-Folly"
-          # Define Folly preprocessor macros without -D prefix
-          folly_flags = [
-            'FOLLY_NO_CONFIG=1',
-            'FOLLY_MOBILE=1',
-            'FOLLY_USE_LIBCPP=1',
-            'FOLLY_HAS_COROUTINES=0',
-            'FOLLY_NO_COROUTINES=1'
-          ]
-          
-          # Apply preprocessor definitions
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = ['$(inherited)'] + folly_flags
-          
-          # For OTHER_CPLUSPLUSFLAGS, we need the -D prefix
-          config.build_settings['OTHER_CPLUSPLUSFLAGS'] = ['$(inherited)'] + folly_flags.map { |f| "-D#{f}" }
+      end
+      
+      if target.name == 'React-Fabric'
+        target.build_configurations.each do |config|
+          config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/Headers/Public/Yoga'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/Headers/Private/Yoga'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/../node_modules/react-native/ReactCommon/yoga'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/../node_modules/react-native/ReactCommon'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/Headers/Public/React-Fabric'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_TARGET_SRCROOT)/yoga'
+        end
+      end
+
+      # Ensure all targets can find Yoga headers
+      target.build_configurations.each do |config|
+        if config.build_settings['HEADER_SEARCH_PATHS']
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/Headers/Public/Yoga'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/../node_modules/react-native/ReactCommon/yoga'
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_TARGET_SRCROOT)/yoga'
         end
       end
     end
 
-    # Ensure consistent C++ standard for the main project
-    installer.aggregate_targets.each do |aggregate_target|
-      aggregate_target.user_project.native_targets.each do |target|
+    # Modify RCT-Folly Portability.h to disable coroutines
+    Dir.glob(installer.sandbox.root + "RCT-Folly/folly/Portability.h") do |file|
+      begin
+        # First try to make the file writable
+        system "chmod +w #{file}"
+        
+        contents = File.read(file)
+        modified_contents = contents.gsub(/#define FOLLY_HAS_COROUTINES 1/, '#define FOLLY_HAS_COROUTINES 0')
+        
+        File.write(file, modified_contents)
+      rescue => e
+        Pod::UI.warn "Failed to modify Portability.h: #{e.message}"
+      end
+    end
+
+    # Disable coroutines in build settings for all RCT-Folly targets
+    installer.pods_project.targets.each do |target|
+      if target.name.include? 'RCT-Folly'
         target.build_configurations.each do |config|
-          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = '$(inherited)'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FOLLY_HAS_COROUTINES=0'
         end
       end
     end
