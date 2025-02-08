@@ -112,9 +112,6 @@ export default function ProfileScreen() {
             {user.username || 'Profile'}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TouchableOpacity style={styles.logoutButton}>
-              <Ionicons name="chatbox-outline" size={24} color="#000" />
-            </TouchableOpacity>
             <TouchableOpacity onPress={signOut} style={styles.logoutButton}>
               <Ionicons name="log-out-outline" size={24} color="#000" />
               <Text style={styles.logoutText}>Logout</Text>

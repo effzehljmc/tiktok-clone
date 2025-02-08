@@ -39,6 +39,17 @@ export function useSavedRecipes(userId: string) {
               id,
               username,
               image
+            ),
+            recipe_metadata (
+              cooking_time,
+              difficulty,
+              cuisine,
+              servings,
+              calories,
+              equipment,
+              dietary_tags,
+              ingredients,
+              steps
             )
           )
         `)
@@ -72,6 +83,17 @@ export function useSavedRecipes(userId: string) {
             id: item.video.creator.id,
             username: item.video.creator.username,
             avatarUrl: item.video.creator.image
+          } : null,
+          recipeMetadata: item.video.recipe_metadata ? {
+            cookingTime: item.video.recipe_metadata.cooking_time,
+            difficulty: item.video.recipe_metadata.difficulty,
+            cuisine: item.video.recipe_metadata.cuisine,
+            servings: item.video.recipe_metadata.servings,
+            calories: item.video.recipe_metadata.calories,
+            equipment: item.video.recipe_metadata.equipment,
+            dietaryTags: item.video.recipe_metadata.dietary_tags,
+            ingredients: item.video.recipe_metadata.ingredients,
+            steps: item.video.recipe_metadata.steps
           } : null
         } : null
       }));

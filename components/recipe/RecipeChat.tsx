@@ -3,13 +3,13 @@ import { View, TextInput, Modal, TouchableOpacity, ActivityIndicator, ScrollView
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
 import { queryRecipeAgent } from '@/services/aiAgent';
-import { Recipe } from '@/types/recipe';
+import { Video } from '@/types/saved-recipe';
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutRight } from 'react-native-reanimated';
 
 interface RecipeChatProps {
   isVisible: boolean;
   onClose: () => void;
-  recipe: Recipe;
+  recipe: Video;
 }
 
 export function RecipeChat({ isVisible, onClose, recipe }: RecipeChatProps) {
@@ -28,9 +28,9 @@ export function RecipeChat({ isVisible, onClose, recipe }: RecipeChatProps) {
       // Format recipe context
       const context = `
         Recipe: ${recipe.title}
-        Ingredients: ${recipe.ingredients.join(", ")}
-        Equipment: ${recipe.equipment.join(", ")}
-        Steps: ${recipe.steps.map(step => step.description).join(". ")}
+        Ingredients: ${recipe.recipeMetadata?.ingredients.join(", ")}
+        Equipment: ${recipe.recipeMetadata?.equipment.join(", ")}
+        Steps: ${recipe.recipeMetadata?.steps.map(step => step.description).join(". ")}
       `;
 
       const result = await queryRecipeAgent(prompt, context);

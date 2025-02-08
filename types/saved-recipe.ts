@@ -9,9 +9,9 @@ interface Creator {
 export interface Video {
   id: string;
   title: string;
-  description: string | null;
+  description?: string;
   url: string;
-  thumbnailUrl: string | null;
+  thumbnailUrl?: string;
   duration: number | null;
   viewsCount: number;
   likesCount: number;
@@ -19,6 +19,20 @@ export interface Video {
   status: VideoStatus;
   isPrivate: boolean;
   creator: Creator | null;
+  recipeMetadata: {
+    cookingTime: number;
+    difficulty: string;
+    cuisine: string;
+    servings: number;
+    calories: number | null;
+    equipment: string[];
+    dietaryTags: string[];
+    ingredients: string[];
+    steps: {
+      timestamp: number;
+      description: string;
+    }[];
+  } | null;
 }
 
 export interface SavedRecipe {

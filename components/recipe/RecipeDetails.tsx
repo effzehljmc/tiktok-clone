@@ -7,11 +7,12 @@ import { useShoppingList } from '@/hooks/useShoppingList';
 import Toast from 'react-native-toast-message';
 import { Recipe } from '@/types/recipe';
 import { RecipeChat } from './RecipeChat';
+import { Video } from '@/types/saved-recipe';
 
 interface RecipeDetailsProps {
   isVisible: boolean;
   onClose: () => void;
-  recipe: Recipe;
+  recipe: Video;
 }
 
 export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps) {
@@ -35,10 +36,10 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
     
     try {
       await addToList(
-        recipe.ingredients.map(ingredient => ({
+        recipe.recipeMetadata?.ingredients.map(ingredient => ({
           ingredient,
           recipe_id: recipe.id
-        }))
+        })) || []
       );
       Toast.show({
         type: 'success',
@@ -112,21 +113,21 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
         <ScrollView className="flex-1 p-4">
           <View className="mb-6">
             <Text className="text-xl font-bold mb-3">Ingredients</Text>
-            {recipe.ingredients.map((ingredient, index) => (
+            {recipe.recipeMetadata?.ingredients.map((ingredient, index) => (
               <Text key={index} className="text-gray-700 mb-1">• {ingredient}</Text>
             ))}
           </View>
 
           <View className="mb-6">
             <Text className="text-xl font-bold mb-3">Equipment Needed</Text>
-            {recipe.equipment.map((item, index) => (
+            {recipe.recipeMetadata?.equipment.map((item, index) => (
               <Text key={index} className="text-gray-700 mb-1">• {item}</Text>
             ))}
           </View>
 
           <View>
             <Text className="text-xl font-bold mb-3">Steps</Text>
-            {recipe.steps.map((step, index) => (
+            {recipe.recipeMetadata?.steps.map((step, index) => (
               <View key={index} className="mb-4">
                 <Text className="text-lg font-semibold mb-2">{index + 1}.</Text>
                 <Text className="text-gray-700">{step.description}</Text>
