@@ -1,6 +1,6 @@
 # Dynamische Rezeptvariationen & Ernährungsoptimierung
 
-Dieses Feature ermöglicht nicht nur die Erzeugung alternativer Rezeptvarianten (z. B. vegetarisch, vegan, kalorienreduziert) basierend auf dem Originalrezept, sondern bietet auch eine interaktive, agentenbasierte Benutzererfahrung, die sich nahtlos in die bestehende Koch- und Rezeptnische integriert.
+Dieses Feature ermöglicht nicht nur die Erzeugung alternativer Rezeptvarianten (z. B. vegetarisch, vegan, kalorienreduziert) basierend auf dem Originalrezept, sondern bietet auch eine interaktive, agentenbasierte Benutzererfahrung, die sich nahtlos in die bestehende Koch- und Rezeptnische integriert.
 
 ---
 
@@ -11,46 +11,50 @@ Die dynamische Rezeptfunktion umfasst:
 - **Dynamische Rezeptvariation:**  
   AI-Agenten generieren in Echtzeit alternative Varianten, die an individuelle Diätpräferenzen, Allergien oder Kalorienvorgaben angepasst sind.
 
-- **Interaktiver Kochassistent:**  
-  Über ein Chat-Interface können Nutzer Fragen stellen (z. B. "Wie lange knete ich den Teig?" oder "Welches Öl passt als Butterersatz?") und erhalten sofort kontextbasierte Antworten.
+- **Interaktiver Kochassistent (Geplant):**  
+  Über ein Chat-Interface können Nutzer Fragen stellen (z. B. "Wie lange knete ich den Teig?" oder "Welches Öl passt als Butterersatz?") und erhalten sofort kontextbasierte Antworten.
 
-- **Ernährungsprofiling:**  
+- **Ernährungsprofiling (Geplant):**  
   Dynamisch kalkulierte Nährwertinformationen und Optimierungsvorschläge werden bereitgestellt – sei es durch automatische Berechnungen oder durch ergänzende AI-Antworten.
 
 ---
 
-## 2. Integration in die App
+## 2. Technische Implementation
 
-### a) AI-basierte Rezeptagenten
+### a) AI-Agent Architektur
 
-Ein zentraler AI-Agent übernimmt Aufgaben, die früher durch separate, statische Endpunkte abgedeckt wurden:
-- **Rezeptvarianten in Echtzeit:**  
-  Nutzer erhalten per Eingabe im Chat dynamisch generierte Rezeptvarianten (z. B. "vegane Variante" oder "kalorienreduziert").
-  
-- **Kontextbezogene Antworten:**  
-  Der Agent beantwortet spezifische Fragen zu Zubereitungsschritten und liefert detaillierte Anleitungen sowie alternative Vorschläge.
-  
-- **Ernährungsoptimierung:**  
-  Auf Basis des Originalrezepts und zusätzlicher Nutzerpräferenzen werden Zutatenlisten sowie Nährwerte angepasst und direkt visualisiert.
+Die Implementation basiert auf einem modularen System mit spezialisierten Komponenten:
+
+- **Prompt Builder System** (`services/prompts/recipePrompts.ts`):
+  - ✓ Spezialisierte Prompt-Templates für verschiedene Anwendungsfälle
+  - ✓ Kontextbasierte Prompt-Generierung
+  - ✓ Unterstützung für:
+    - Rezeptvariationen
+    - Ernährungsanalyse (Vorbereitet, noch nicht aktiv)
+    - Kochtechniken (Vorbereitet, noch nicht aktiv)
+    - Zutatensubstitution
+
+- **Fehlerbehandlung & Resilienz** (`services/safeAiAgent.ts`):
+  - ✓ Exponentielles Backoff bei Fehlern
+  - ✓ Typenspezifische Fehlerbehandlung
+  - ✓ Detailliertes Error-Logging
+  - ✓ Konfigurierbare Retry-Logik
 
 ### b) Backend-Integration
 
 - **Zentraler API-Endpunkt:**  
-  Statt mehrerer fest definierter Routen wird ein einheitlicher Endpunkt (z. B. `/api/ai-agent`) eingesetzt, der alle Anfragen verarbeitet.
-  
-- **Agent-Service:**  
-  In `services/aiAgent.ts` wird mittels eines Chat-Komplettierungsansatzes (GPT-4) dynamisch auf Nutzeranfragen reagiert.
+  Ein einheitlicher Endpunkt (`/api/ai-agent`) verarbeitet alle Anfragen mit:
+  - ✓ Caching-Mechanismus für häufige Anfragen
+  - ✓ Fehlerbehandlung und Retry-Logik
+  - ✓ Kontextbasierte Prompt-Generierung
 
-- **Asynchrone Verarbeitung & Caching:**  
-  Generierte Varianten und Antworten werden temporär gecacht, um wiederholte Anfragen effizient zu bedienen.
+### c) Geplante Features
 
-### c) Frontend-Integration
+- **Ernährungsoptimierung:**  
+  Auf Basis des Originalrezepts und zusätzlicher Nutzerpräferenzen werden Zutatenlisten sowie Nährwerte angepasst und direkt visualisiert.
 
-- **Integriertes Chat-Interface:**  
-  Auf der Rezeptdetailseite wird ein Chat-Bereich angezeigt, über den der Nutzer den AI-Agenten direkt ansprechen kann.
-  
-- **Dynamische Anzeige:**  
-  Basisinformationen wie Zutatenliste und Nährwerte werden zunächst statisch dargestellt. Bei Interaktion ergänzt der Agent diese um detaillierte, kontextbezogene Informationen in einem Overlay oder Chat-Fenster.
+- **Kontextbezogene Antworten:**  
+  Der Agent beantwortet spezifische Fragen zu Zubereitungsschritten und liefert detaillierte Anleitungen sowie alternative Vorschläge.
 
 ---
 
@@ -62,7 +66,7 @@ Ein zentraler AI-Agent übernimmt Aufgaben, die früher durch separate, statisch
 2. **Interaktion mit dem AI-Agenten:**  
    Über den integrierten Chat können:
    - Spezifische Fragen zu einzelnen Rezeptschritten gestellt werden.
-   - Alternative Rezeptvarianten (z. B. „Erstelle die vegane Variante“) angefragt werden.
+   - Alternative Rezeptvarianten (z. B. "Erstelle die vegane Variante") angefragt werden.
    - Detaillierte Ernährungsinformationen abgerufen werden.
 
 3. **Ergebnisanzeige:**  

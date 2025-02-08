@@ -10,37 +10,65 @@
    - ✓ Fixed OpenAI API integration (v4)
    - ✓ Fixed environment variables deployment
 
-2. **Test Interface**
+2. **AI-Agent Architecture**
+   - ✓ Created modular prompt builder system in `services/prompts/recipePrompts.ts`
+   - ✓ Implemented specialized prompt builders for:
+     - Recipe variations
+     - Prepared templates for nutrition analysis (not active)
+     - Prepared templates for cooking techniques (not active)
+     - Prepared templates for ingredient substitution (not active)
+   - ✓ Added error handling wrapper with retry logic in `services/safeAiAgent.ts`
+   - ✓ Implemented exponential backoff and error-specific handling
+
+3. **Test Interface**
    - ✓ Created `components/tests/AIAgentTest.tsx`
    - ✓ Added test route `app/tests/ai-agent.tsx`
    - ✓ Added test button in profile screen `app/(tabs)/profile.tsx`
+   - ✓ Implemented basic chat interface with error handling
+   - ✓ Added loading states and response caching display
+
+4. **Data Model**
+   - ✓ Updated `Video` type to include recipe metadata
+   - ✓ Modified `useSavedRecipes` hook for recipe metadata
+   - ✓ Added recipe metadata to database schema
+   - ✓ Implemented recipe context formatting
 
 ## 🚧 In Progress
 
-1. **Frontend Integration**
-   - [ ] Integrate chat interface into recipe detail page
-   - [ ] Implement dynamic UI updates for recipe variations
-   - [ ] Add shopping list integration
+1. **Recipe Interaction**
+   - [ ] Implement recipe variation storage
+   - [ ] Add "back to original recipe" functionality
+   - [ ] Add recipe modification history
 
-2. **Data Model & Context**
-   - [ ] Implement `buildRecipeContext` function
-   - [ ] Add variant tracking in database
+2. **User Experience**
+   - [ ] Implement feedback system for AI responses
+   - [ ] Add user preference persistence
+   - [ ] Add response rating system
+
+3. **Core Features**
+   - [ ] Activate and test nutrition analysis
+   - [ ] Activate and test cooking technique guidance
+   - [ ] Activate and test ingredient substitution
+   - [ ] Implement context-aware recipe assistance
 
 ## 📝 To Do
 
-1. **Performance & Caching**
-   - [ ] Implement asynchronous processing for complex requests
-   - [ ] Add queue system for long-running tasks
+1. **Performance & Monitoring**
+   - [ ] Add telemetry/metrics collection
+   - [ ] Integrate with proper logging service
+   - [ ] Implement circuit breaker pattern
+   - [ ] Optimize caching strategy for frequent queries
 
-2. **User Experience & Feedback**
-   - [ ] Add loading states and error handling
-   - [ ] Implement feedback system for AI responses
-   - [ ] Add "back to original recipe" functionality
-
-3. **Additional Features**
-   - [ ] Implement nutrition analysis
+2. **Additional Features**
    - [ ] Add voice commands
    - [ ] Add multi-language support
+   - [ ] Implement personalized recipe suggestions
+
+3. **Testing & Documentation**
+   - [ ] Add unit tests for AI agent service
+   - [ ] Add integration tests for recipe variations
+   - [ ] Create user documentation for AI features
+   - [ ] Document API endpoints and response formats
 
 Below is a high-level checklist of how you can **implement the AI-powered "Dynamische Rezeptvarianten & Ernährungsoptimierung"** feature described in `@dynamic_recipe.md`.  
 Each step is presented as a structured ToDo with potential file references and approaches. Adjust specifics to your existing project setup.

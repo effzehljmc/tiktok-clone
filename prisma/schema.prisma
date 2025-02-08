@@ -1,61 +1,58 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+  previewFeatures = ["postgresqlExtensions", "multiSchema"]
 }
 
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
   directUrl  = env("DIRECT_URL")
-  extensions = [uuid_ossp(map: "uuid-ossp")]
+  schemas    = ["public", "auth"]
+  extensions = [uuid_ossp(map: "uuid-ossp"), pg_cron(), pg_graphql(), pg_stat_statements()]
 }
 
 model User {
-  id        String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email     String     @unique
-  username  String     @unique
-  fullName  String?
-  bio       String?
-  image     String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  comments  Comment[]
-  following Follower[] @relation("user_following")
-  followers Follower[] @relation("user_followers")
-  likes     Like[]
-  videos    Video[]
-  metrics   VideoMetrics[]
-  savedRecipes SavedRecipe[]
-  shoppingList ShoppingList[]
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  username      String    @unique
+  email         String    @unique
+  avatarUrl     String?   @map("avatar_url")
+  bio           String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  videos        Video[]
+  likes         Like[]
+  comments      Comment[]
+  followers     Follower[] @relation("user_followers")
+  following     Follower[] @relation("user_following")
+  savedRecipes  SavedRecipe[]
+  shoppingLists ShoppingList[]
+  variations    RecipeVariation[]
+  metrics       VideoMetrics[]
+
+  @@map("users")
+  @@schema("public")
 }
 
 model Video {
-  id            String         @id @default(uuid()) @db.Uuid
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
   title         String
   description   String?
-  videoUrl      String         @map("video_url")
-  thumbnailUrl  String?        @map("thumbnail_url")
-  duration      Int?
-  viewsCount    Int            @default(0) @map("views_count")
-  likesCount    Int            @default(0) @map("likes_count")
-  commentsCount Int            @default(0) @map("comments_count")
-  status        VideoStatus    @default(PROCESSING)
-  isPrivate     Boolean        @default(false) @map("is_private")
-  creatorId     String         @map("creator_id") @db.Uuid
-  category      VideoCategory?
-  tags          String[]
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
-  comments      Comment[]
+  videoUrl      String    @map("video_url")
+  thumbnailUrl  String    @map("thumbnail_url")
+  status        VideoStatus @default(PROCESSING)
+  category      VideoCategory
+  createdAt     DateTime  @default(now()) @map("created_at")
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   likes         Like[]
+  comments      Comment[]
   metrics       VideoMetrics[]
-  creator       User           @relation(fields: [creatorId], references: [id])
-  recipeMetadata RecipeMetadata?
+  recipe        RecipeMetadata?
   savedBy       SavedRecipe[]
+  shoppingLists ShoppingList[]
 
-  @@index([creatorId])
-  @@index([createdAt(sort: Desc)])
+  @@index([userId])
   @@map("videos")
+  @@schema("public")
 }
 
 model Like {
@@ -68,6 +65,7 @@ model Like {
 
   @@unique([userId, videoId])
   @@map("likes")
+  @@schema("public")
 }
 
 model Follower {
@@ -80,6 +78,7 @@ model Follower {
 
   @@unique([userId, followerUserId])
   @@map("followers")
+  @@schema("public")
 }
 
 model Comment {
@@ -93,6 +92,7 @@ model Comment {
 
   @@index([videoId])
   @@map("comments")
+  @@schema("public")
 }
 
 model VideoMetrics {
@@ -112,6 +112,7 @@ model VideoMetrics {
   @@index([videoId])
   @@index([userId])
   @@map("video_metrics")
+  @@schema("public")
 }
 
 model RecipeMetadata {
@@ -127,9 +128,32 @@ model RecipeMetadata {
   dietaryTags   String[] @map("dietary_tags") // e.g., Vegetarian, Vegan, etc.
   steps         Json     // Array of {timestamp: number, description: string}
   video         Video    @relation(fields: [videoId], references: [id])
+  variations    RecipeVariation[]
 
   @@index([videoId])
   @@map("recipe_metadata")
+  @@schema("public")
+}
+
+model RecipeVariation {
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId          String   @db.Uuid @map("user_id")
+  recipeId        String   @db.Uuid @map("recipe_id")
+  title           String?
+  ingredients     String[]
+  equipment       String[]
+  steps           Json     // Array of {timestamp: number, description: string}
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  aiPrompt        String   @map("ai_prompt") // Store the prompt that generated this variation
+  originalPrompt  String   @map("original_prompt") // Store the user's original question
+  
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe         RecipeMetadata @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([recipeId])
+  @@map("recipe_variations")
+  @@schema("public")
 }
 
 model SavedRecipe {
@@ -142,6 +166,7 @@ model SavedRecipe {
 
   @@unique([userId, videoId])
   @@map("saved_recipes")
+  @@schema("public")
 }
 
 model ShoppingList {
@@ -160,12 +185,15 @@ model ShoppingList {
   @@index([userId])
   @@index([recipeId])
   @@map("shopping_list")
+  @@schema("public")
 }
 
 enum VideoStatus {
   PROCESSING
   PUBLISHED
   FAILED
+
+  @@schema("public")
 }
 
 enum VideoCategory {
@@ -181,4 +209,6 @@ enum VideoCategory {
   DESSERT
   SNACKS
   DRINKS
+
+  @@schema("public")
 }

@@ -10,7 +10,20 @@
    - ✓ Fixed OpenAI API integration to use v4 client correctly
    - ✓ Fixed environment variables deployment script
 
-2. **Testing Setup**
+2. **Error Handling & Modularity**
+   - ✓ Created modular prompt builder system in `services/prompts/recipePrompts.ts`
+   - ✓ Implemented specialized prompt builders for different query types:
+     - Recipe variations
+     - Nutrition analysis
+     - Cooking techniques
+     - Ingredient substitutions
+   - ✓ Added comprehensive error handling wrapper in `services/safeAiAgent.ts`:
+     - Exponential backoff retry logic
+     - Error type-specific handling
+     - Detailed error logging
+     - Retry configuration options
+
+3. **Testing Setup**
    - ✓ Created test component `components/tests/AIAgentTest.tsx`
    - ✓ Added test route `app/tests/ai-agent.tsx`
    - ✓ Added test access via profile screen
@@ -18,8 +31,9 @@
 ## 📝 To Do
 
 1. **Error Handling & Logging**
-   - [ ] Add comprehensive error handling for API failures
-   - [ ] Add retry mechanism for failed requests
+   - [ ] Add telemetry/metrics collection
+   - [ ] Integrate with proper logging service
+   - [ ] Implement circuit breaker pattern
 
 2. **Performance Optimization**
    - [ ] Implement request throttling

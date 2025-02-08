@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+import { RecipeMetadata } from '@prisma/client';
+import { selectPromptBuilder } from './prompts/recipePrompts';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -14,17 +16,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Types for our AI agent service
-interface AIAgentResponse {
-  content: string;
-  cached: boolean;
-  error?: string;
-}
-
-interface AIAgentOptions {
+export interface AIAgentOptions {
   temperature?: number;
   maxTokens?: number;
   model?: string;
+  queryType?: 'VARIATION' | 'NUTRITION' | 'TECHNIQUE' | 'SUBSTITUTION';
+  userPreferences?: {
+    dietaryRestrictions?: string[];
+    allergies?: string[];
+    cookingLevel?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  };
+}
+
+export interface AIAgentResponse {
+  content: string;
+  cached: boolean;
+  error?: string;
 }
 
 /**
@@ -32,17 +39,28 @@ interface AIAgentOptions {
  */
 export async function queryRecipeAgent(
   userPrompt: string,
-  context: string,
+  recipe: RecipeMetadata,
   options: AIAgentOptions = {}
 ): Promise<AIAgentResponse> {
   try {
     console.log('Querying AI agent with prompt:', userPrompt);
     
+    const queryType = options.queryType || 'VARIATION';
+    const promptBuilder = selectPromptBuilder(queryType);
+    const context = promptBuilder(userPrompt, { 
+      recipe,
+      userPreferences: options.userPreferences
+    });
+
     const { data, error } = await supabase.functions.invoke('ai-agent', {
       body: {
         userPrompt,
         context,
-        options,
+        options: {
+          temperature: options.temperature,
+          maxTokens: options.maxTokens,
+          model: options.model,
+        },
       },
     });
 
