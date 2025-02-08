@@ -105,54 +105,57 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
   const content = getCurrentContent();
 
   return (
-    <View className="flex-1 bg-white rounded-3xl overflow-hidden">
+    <View className="flex-1 bg-gray-900 rounded-3xl overflow-hidden">
       {/* Header */}
-      <View className="p-4 border-b border-gray-100">
-        <View className="flex-row justify-between items-center mb-2">
-          <Text className="text-3xl font-bold flex-1">
+      <View className="p-6 border-b border-gray-800">
+        <View className="flex-row justify-between items-center mb-4">
+          <Text className="text-3xl font-bold text-white flex-1">
             {selectedVariation ? selectedVariation.title || 'Recipe Variation' : 'Recipe Details'}
           </Text>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color="black" />
+          <TouchableOpacity 
+            onPress={onClose}
+            className="bg-gray-800 rounded-full p-2"
+          >
+            <Ionicons name="close" size={24} color="white" />
           </TouchableOpacity>
         </View>
         {user && (
-          <View className="flex-row items-center gap-6 mt-2">
+          <View className="flex-row items-center justify-between mt-2">
             <TouchableOpacity 
               onPress={handleAddToShoppingList}
               disabled={isAdding}
-              className="flex-row items-center"
+              className="flex-row items-center bg-gray-800 px-4 py-2 rounded-full"
             >
               <Ionicons 
                 name="cart-outline" 
-                size={24} 
-                color={isAdding ? "gray" : "black"} 
+                size={20} 
+                color={isAdding ? "gray" : "white"} 
               />
-              <Text className="ml-2 text-sm">Add to Cart</Text>
+              <Text className="ml-2 text-sm text-white">Add to Cart</Text>
             </TouchableOpacity>
-            <View className="flex-row items-center">
-              <SaveButton videoId={recipe.id} userId={user.id} size={24} />
-              <Text className="ml-2 text-sm">Save</Text>
-            </View>
+            <TouchableOpacity className="flex-row items-center bg-gray-800 px-4 py-2 rounded-full">
+              <SaveButton videoId={recipe.id} userId={user.id} size={20} />
+              <Text className="ml-2 text-sm text-white">Save</Text>
+            </TouchableOpacity>
             {variations.length > 0 && (
               <TouchableOpacity 
                 onPress={() => setShowVariationHistory(!showVariationHistory)}
-                className="flex-row items-center"
+                className="flex-row items-center bg-gray-800 px-4 py-2 rounded-full"
               >
                 <Ionicons 
                   name="git-branch-outline" 
-                  size={24} 
-                  color="black" 
+                  size={20} 
+                  color="white" 
                 />
-                <Text className="ml-2 text-sm">Variations</Text>
+                <Text className="ml-2 text-sm text-white">Variations</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity 
               onPress={() => setIsChatVisible(true)}
-              className="flex-row items-center"
+              className="flex-row items-center bg-gray-800 px-4 py-2 rounded-full"
             >
-              <Ionicons name="chatbubble-outline" size={24} color="black" />
-              <Text className="ml-2 text-sm">Chat</Text>
+              <Ionicons name="chatbubble-outline" size={20} color="white" />
+              <Text className="ml-2 text-sm text-white">Chat</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -165,18 +168,18 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
           <Animated.View 
             entering={FadeIn}
             exiting={FadeOut}
-            className="bg-gray-50 p-4 border-b border-gray-200"
+            className="bg-gray-800 p-6 border-b border-gray-700"
           >
-            <Text className="text-lg font-semibold mb-3">Variations</Text>
+            <Text className="text-lg font-semibold mb-4 text-white">Variations</Text>
             {isLoadingVariations ? (
-              <ActivityIndicator size="small" color="#0000ff" />
+              <ActivityIndicator size="small" color="#3b82f6" />
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <TouchableOpacity
                   onPress={() => handleVariationSelect(null)}
-                  className={`mr-2 px-4 py-2 rounded-full ${!selectedVariation ? 'bg-blue-500' : 'bg-gray-200'}`}
+                  className={`mr-2 px-4 py-2 rounded-full ${!selectedVariation ? 'bg-blue-500' : 'bg-gray-700'}`}
                 >
-                  <Text className={`${!selectedVariation ? 'text-white' : 'text-gray-800'}`}>
+                  <Text className="text-white">
                     Original
                   </Text>
                 </TouchableOpacity>
@@ -184,9 +187,9 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
                   <View key={variation.id} className="flex-row items-center mr-2">
                     <TouchableOpacity
                       onPress={() => handleVariationSelect(variation)}
-                      className={`px-4 py-2 rounded-l-full ${selectedVariation?.id === variation.id ? 'bg-blue-500' : 'bg-gray-200'}`}
+                      className={`px-4 py-2 rounded-l-full ${selectedVariation?.id === variation.id ? 'bg-blue-500' : 'bg-gray-700'}`}
                     >
-                      <Text className={`${selectedVariation?.id === variation.id ? 'text-white' : 'text-gray-800'}`}>
+                      <Text className="text-white">
                         {variation.variationType.split('_').map((word: string) => 
                           word.charAt(0) + word.slice(1).toLowerCase()
                         ).join(' ')}
@@ -209,11 +212,9 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
                                 try {
                                   if (!user) return;
                                   await deleteRecipeVariation(variation.id, user.id);
-                                  // If the deleted variation was selected, switch back to original
                                   if (selectedVariation?.id === variation.id) {
                                     handleVariationSelect(null);
                                   }
-                                  // Reload variations
                                   loadVariations();
                                   Toast.show({
                                     type: 'success',
@@ -232,13 +233,13 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
                         );
                       }}
                       className={`px-3 py-2 rounded-r-full ${
-                        selectedVariation?.id === variation.id ? 'bg-blue-600' : 'bg-gray-300'
+                        selectedVariation?.id === variation.id ? 'bg-blue-600' : 'bg-gray-600'
                       }`}
                     >
                       <Ionicons 
                         name="trash-outline" 
                         size={16} 
-                        color={selectedVariation?.id === variation.id ? 'white' : 'black'} 
+                        color="white" 
                       />
                     </TouchableOpacity>
                   </View>
@@ -248,39 +249,39 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
           </Animated.View>
         )}
 
-        <View className="px-4">
+        <View className="p-6">
           {/* Title */}
-          <Text className="text-3xl font-bold mt-6 mb-6">{content.title}</Text>
+          <Text className="text-3xl font-bold mb-8 text-white">{content.title}</Text>
 
           {/* Ingredients */}
           <View className="mb-8">
-            <Text className="text-3xl font-bold mb-4">Ingredients</Text>
+            <Text className="text-2xl font-bold mb-4 text-white">Ingredients</Text>
             {content.ingredients?.map((ingredient, index) => (
-              <View key={index} className="flex-row items-center mb-3">
+              <View key={index} className="flex-row items-center mb-3 bg-gray-800 p-4 rounded-xl">
                 <View className="w-2 h-2 rounded-full bg-blue-500 mr-4" />
-                <Text className="text-xl">{ingredient}</Text>
+                <Text className="text-lg text-gray-200">{ingredient}</Text>
               </View>
             ))}
           </View>
 
           {/* Equipment */}
           <View className="mb-8">
-            <Text className="text-3xl font-bold mb-4">Equipment Needed</Text>
+            <Text className="text-2xl font-bold mb-4 text-white">Equipment Needed</Text>
             {content.equipment?.map((item, index) => (
-              <View key={index} className="flex-row items-center mb-3">
+              <View key={index} className="flex-row items-center mb-3 bg-gray-800 p-4 rounded-xl">
                 <View className="w-2 h-2 rounded-full bg-blue-500 mr-4" />
-                <Text className="text-xl">{item}</Text>
+                <Text className="text-lg text-gray-200">{item}</Text>
               </View>
             ))}
           </View>
 
           {/* Steps */}
           <View className="mb-8">
-            <Text className="text-3xl font-bold mb-4">Steps</Text>
+            <Text className="text-2xl font-bold mb-4 text-white">Steps</Text>
             {content.steps?.map((step, index) => (
-              <View key={index} className="mb-4">
-                <Text className="text-xl font-semibold mb-2">{index + 1}.</Text>
-                <Text className="text-xl">{step.description}</Text>
+              <View key={index} className="mb-4 bg-gray-800 p-4 rounded-xl">
+                <Text className="text-lg font-semibold mb-2 text-blue-400">{index + 1}.</Text>
+                <Text className="text-lg text-gray-200">{step.description}</Text>
               </View>
             ))}
           </View>
@@ -290,9 +291,9 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
       {/* Minimize Button */}
       <TouchableOpacity 
         onPress={onClose}
-        className="absolute bottom-4 right-4 bg-black rounded-full p-4 shadow-lg"
+        className="absolute bottom-6 right-6 bg-blue-500 rounded-full p-4 shadow-lg"
       >
-        <Ionicons name="chevron-down" size={28} color="white" />
+        <Ionicons name="chevron-down" size={24} color="white" />
       </TouchableOpacity>
 
       {/* Chat Modal */}
@@ -300,7 +301,7 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
         isVisible={isChatVisible}
         onClose={() => {
           setIsChatVisible(false);
-          loadVariations(); // Reload variations after chat closes
+          loadVariations();
         }}
         recipe={recipe}
       />

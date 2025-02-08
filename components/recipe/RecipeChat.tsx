@@ -3,7 +3,7 @@ import { View, TextInput, Modal, TouchableOpacity, ActivityIndicator, ScrollView
 import { Text } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
 import { queryRecipeAgent } from '@/services/aiAgent';
-import { saveRecipeVariation, type RecipeVariationInput } from '@/services/recipeVariations';
+import { saveRecipeVariation, type RecipeVariationInput, type RecipeVariation } from '@/services/recipeVariations';
 import { Video } from '@/types/saved-recipe';
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutRight } from 'react-native-reanimated';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,7 +16,7 @@ interface RecipeChatProps {
   isVisible: boolean;
   onClose: () => void;
   recipe: Video;
-  onVariationCreated?: () => void;
+  onVariationCreated?: (variation: RecipeVariation) => void;
 }
 
 interface ParsedVariation {
@@ -284,7 +284,7 @@ export function RecipeChat({ isVisible, onClose, recipe, onVariationCreated }: R
         variationType: savedVariation.variationType
       });
 
-      onVariationCreated?.(); // Call the callback if provided
+      onVariationCreated?.(savedVariation); // Call the callback with the saved variation
       onClose();
       
       Toast.show({
@@ -361,26 +361,73 @@ export function RecipeChat({ isVisible, onClose, recipe, onVariationCreated }: R
                 <Text>{response}</Text>
                 {parsedVariation && (
                   <View className="mt-4 bg-white rounded-lg p-3 border border-gray-200">
-                    <Text className="font-medium mb-2">Parsed Variation Summary:</Text>
-                    <Text>• Type: {parsedVariation.variationType}</Text>
-                    <Text>• Ingredients: {parsedVariation.ingredients.length} items</Text>
-                    <Text>• Equipment: {parsedVariation.equipment.length} items</Text>
-                    <Text>• Steps: {parsedVariation.steps.length} steps</Text>
+                    <Text className="font-medium mb-2">Recipe Changes:</Text>
+                    
+                    {/* Show variation type in friendly language */}
+                    <Text className="text-gray-700 mb-2">
+                      {parsedVariation.variationType === 'DIETARY' && '🥗 Dietary Modification'}
+                      {parsedVariation.variationType === 'INGREDIENT_SUBSTITUTION' && '🔄 Ingredient Changes'}
+                      {parsedVariation.variationType === 'PORTION_ADJUSTMENT' && '⚖️ Portion Adjustment'}
+                      {parsedVariation.variationType === 'COOKING_METHOD' && '👩‍🍳 Cooking Method Change'}
+                      {parsedVariation.variationType === 'FLAVOR_PROFILE' && '🌶️ Flavor Modification'}
+                    </Text>
+
+                    {/* Show actual changes */}
+                    {recipe.recipeMetadata && (
+                      <>
+                        {/* Show ingredient changes */}
+                        <View className="mb-2">
+                          <Text className="font-medium text-sm text-gray-600">Changes to Ingredients:</Text>
+                          {parsedVariation.ingredients
+                            .filter(ing => !recipe.recipeMetadata?.ingredients.includes(ing))
+                            .map((ing, idx) => (
+                              <Text key={idx} className="text-green-600">+ Added: {ing}</Text>
+                            ))}
+                          {recipe.recipeMetadata.ingredients
+                            .filter(ing => !parsedVariation.ingredients.includes(ing))
+                            .map((ing, idx) => (
+                              <Text key={idx} className="text-red-600">- Removed: {ing}</Text>
+                            ))}
+                        </View>
+
+                        {/* Show equipment changes */}
+                        {parsedVariation.equipment.some(eq => !recipe.recipeMetadata.equipment.includes(eq)) && (
+                          <View className="mb-2">
+                            <Text className="font-medium text-sm text-gray-600">Equipment Updates:</Text>
+                            {parsedVariation.equipment
+                              .filter(eq => !recipe.recipeMetadata?.equipment.includes(eq))
+                              .map((eq, idx) => (
+                                <Text key={idx} className="text-blue-600">• New: {eq}</Text>
+                              ))}
+                          </View>
+                        )}
+
+                        {/* Show step changes */}
+                        <View>
+                          <Text className="font-medium text-sm text-gray-600">
+                            {parsedVariation.steps.length !== recipe.recipeMetadata.steps.length
+                              ? `Steps modified: ${parsedVariation.steps.length} steps`
+                              : 'Steps updated with new instructions'}
+                          </Text>
+                        </View>
+                      </>
+                    )}
+
+                    <TouchableOpacity
+                      onPress={handleSaveVariation}
+                      disabled={isSaving}
+                      className={`mt-4 bg-blue-500 p-3 rounded-lg flex-row justify-center items-center ${isSaving ? 'opacity-50' : ''}`}
+                    >
+                      {isSaving ? (
+                        <ActivityIndicator size="small" color="white" />
+                      ) : (
+                        <Text className="text-white font-medium">
+                          Save These Changes
+                        </Text>
+                      )}
+                    </TouchableOpacity>
                   </View>
                 )}
-                <TouchableOpacity
-                  onPress={handleSaveVariation}
-                  disabled={isSaving || !parsedVariation}
-                  className={`mt-4 bg-blue-500 p-3 rounded-lg flex-row justify-center items-center ${(isSaving || !parsedVariation) ? 'opacity-50' : ''}`}
-                >
-                  {isSaving ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <Text className="text-white font-medium">
-                      {parsedVariation ? 'Save Variation' : 'Unable to Parse Variation'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
               </Animated.View>
             ) : (
               <View className="items-center justify-center py-8">

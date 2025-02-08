@@ -33,12 +33,33 @@
    - ✓ Added recipe metadata to database schema
    - ✓ Implemented recipe context formatting
 
+5. **Recipe Variations**
+   - ✓ Database Schema:
+     - Added `RecipeVariation` model with core fields and metadata
+     - Created migration with proper constraints and RLS policies
+     - Added proper indexing for performance
+   - ✓ Service Layer (`services/recipeVariations.ts`):
+     - Implemented CRUD operations with Supabase
+     - Added variation history tracking with diffs
+     - Added type-safe interfaces and error handling
+   - ✓ UI Integration (`components/recipe/ExpandedRecipeCard.tsx`):
+     - Added variation management with state handling
+     - Implemented "Back to Original" functionality
+     - Added variation history display with categories
+     - Added delete functionality with confirmation
+     - Implemented modern dark theme UI
+   - ✓ Chat Integration (`components/recipe/RecipeChat.tsx`):
+     - Added variation creation through AI chat
+     - Implemented variation parsing and validation
+     - Added success/error feedback
+     - Added variation type detection
+
 ## 🚧 In Progress
 
-1. **Recipe Interaction**
-   - [ ] Implement recipe variation storage
-   - [ ] Add "back to original recipe" functionality
-   - [ ] Add recipe modification history
+1. **UI/UX Enhancements**
+   - [ ] Add variation comparison view
+   - [ ] Enhance accessibility features
+   - [ ] Implement search/filter in variation history
 
 2. **User Experience**
    - [ ] Implement feedback system for AI responses
@@ -46,10 +67,76 @@
    - [ ] Add response rating system
 
 3. **Core Features**
-   - [ ] Activate and test nutrition analysis
-   - [ ] Activate and test cooking technique guidance
-   - [ ] Activate and test ingredient substitution
-   - [ ] Implement context-aware recipe assistance
+   - [ ] Nutrition Analysis:
+     - Integrate with external nutrition API (e.g., nutritionix)
+     - Real-time calculation of nutritional values for variations
+     - Automatic comparison with original recipe
+     - Visual presentation of nutritional changes
+     - Support for dietary goals and restrictions
+
+   - [ ] Cooking Technique Guidance:
+     - Step-by-step technique explanations
+     - Visual aids for complex techniques
+     - Alternative cooking method suggestions
+     - Equipment-specific guidance
+     - Temperature and timing recommendations
+
+   - [ ] Ingredient Substitution:
+     - Smart substitution recommendations
+     - Dietary restriction-aware replacements
+     - Seasonal ingredient alternatives
+     - Local availability considerations
+     - Impact on taste and texture explanations
+
+   - [ ] Context-Aware Recipe Assistance:
+     - User skill level adaptation
+     - Kitchen equipment availability check
+     - Cooking time optimization
+     - Batch cooking suggestions
+     - Preparation tips based on user context
+
+4. **App Integration**
+   - [✓] Shopping List Integration:
+     - Database Updates:
+       - ✓ Added variation_id field to shopping_list table
+       - ✓ Added notes field for substitution context
+       - ✓ Added is_substitution flag
+       - ✓ Created indexes for performance
+       - ✓ Added merge function for duplicate handling
+     
+     - Service Layer (`hooks/useShoppingList.ts`):
+       - ✓ Added variation support to useShoppingList hook
+       - ✓ Implemented smart ingredient parsing
+       - ✓ Added helper functions for filtering and grouping
+       - ✓ Added substitution tracking
+       - ✓ Added comprehensive unit handling
+       - ✓ Implemented type-safe mutations
+     
+     - Hook Updates:
+       - ✓ Added variation-aware ingredient management
+       - ✓ Added substitution tracking
+       - ✓ Added support for multiple variations
+       - ✓ Added helper functions for filtering
+       - ✓ Enhanced query to include related data
+     
+     - UI Enhancements:
+       - ✓ Show variation source in shopping list
+       - ✓ Add variation-specific grouping
+       - ✓ Display substitution notes
+       - ✓ Allow switching between original/variation ingredients
+       - [ ] Add quantity adjustment controls
+     
+     - Features:
+       - ✓ Smart ingredient combining (implemented in merge_shopping_list_items)
+       - ✓ Variation-aware quantity scaling
+       - ✓ Ingredient substitution tracking
+       - ✓ Shopping list organization by variation
+       - ✓ Conflict resolution for overlapping ingredients
+
+   - [ ] Personalized Feed Integration:
+     - Factor AI interactions into recommendation algorithm
+     - Suggest recipes based on variation preferences
+     - Track user interaction patterns
 
 ## 📝 To Do
 
@@ -63,12 +150,29 @@
    - [ ] Add voice commands
    - [ ] Add multi-language support
    - [ ] Implement personalized recipe suggestions
+   - [ ] Add nutrition optimization suggestions
+   - [ ] Implement real-time nutrition calculation
 
 3. **Testing & Documentation**
    - [ ] Add unit tests for AI agent service
    - [ ] Add integration tests for recipe variations
    - [ ] Create user documentation for AI features
    - [ ] Document API endpoints and response formats
+   - [ ] Add integration tests for shopping list sync
+   - [ ] Test personalized feed recommendations
+
+### File References
+- Schema: `prisma/schema.prisma`
+- Migration: `supabase/migrations/20240315_add_recipe_variations.sql`
+- Service: `services/recipeVariations.ts`
+- UI Components:
+  - `components/recipe/ExpandedRecipeCard.tsx`
+  - `components/recipe/RecipeChat.tsx`
+
+### Integration Points
+- Shopping List: `hooks/useShoppingList.ts`
+- Personalized Feed: `hooks/usePersonalizedFeed.ts`
+- Recipe Recommendations: `services/recipeRecommendations.ts`
 
 Below is a high-level checklist of how you can **implement the AI-powered "Dynamische Rezeptvarianten & Ernährungsoptimierung"** feature described in `@dynamic_recipe.md`.  
 Each step is presented as a structured ToDo with potential file references and approaches. Adjust specifics to your existing project setup.

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabase';
+import { RecipeVariation } from '@/services/recipeVariations';
 
 interface ShoppingListItem {
   id: string;
@@ -9,8 +10,16 @@ interface ShoppingListItem {
   unit?: string;
   is_checked: boolean;
   recipe_id?: string;
+  variation_id?: string;
+  notes?: string;
+  is_substitution: boolean;
   created_at: string;
   updated_at: string;
+  recipe?: {
+    title: string;
+    id: string;
+  };
+  variation?: RecipeVariation;
 }
 
 interface AddShoppingListItem {
@@ -18,6 +27,9 @@ interface AddShoppingListItem {
   quantity?: string;
   unit?: string;
   recipe_id?: string;
+  variation_id?: string;
+  notes?: string;
+  is_substitution?: boolean;
 }
 
 // Common units for ingredient measurements
@@ -71,7 +83,14 @@ export function useShoppingList(userId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shopping_list')
-        .select('*')
+        .select(`
+          *,
+          recipe:videos!recipe_id (
+            id,
+            title
+          ),
+          variation:recipe_variations!variation_id (*)
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -106,6 +125,9 @@ export function useShoppingList(userId: string) {
             quantity: item.quantity || '1',
             unit: item.unit || null,
             recipe_id: item.recipe_id || null,
+            variation_id: item.variation_id || null,
+            notes: item.notes || null,
+            is_substitution: item.is_substitution || false,
             is_checked: false,
           }))
         );
@@ -124,6 +146,27 @@ export function useShoppingList(userId: string) {
       const { error } = await supabase
         .from('shopping_list')
         .update({ is_checked: !item.is_checked })
+        .eq('id', itemId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ 
+      itemId, 
+      updates 
+    }: { 
+      itemId: string; 
+      updates: Partial<Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>> 
+    }) => {
+      const { error } = await supabase
+        .from('shopping_list')
+        .update(updates)
         .eq('id', itemId)
         .eq('user_id', userId);
 
@@ -170,12 +213,21 @@ export function useShoppingList(userId: string) {
     error: query.error,
     addToList: addMutation.mutate,
     toggleItem: toggleMutation.mutate,
+    updateItem: updateMutation.mutate,
     deleteItem: deleteMutation.mutate,
     deleteCheckedItems: deleteCheckedMutation.mutate,
     // Mutation states for UI feedback
     isAdding: addMutation.isPending,
     isToggling: toggleMutation.isPending,
+    isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
     isDeletingChecked: deleteCheckedMutation.isPending,
+    // Helper functions
+    getItemsByRecipe: (recipeId: string) => 
+      query.data?.filter(item => item.recipe_id === recipeId) || [],
+    getItemsByVariation: (variationId: string) => 
+      query.data?.filter(item => item.variation_id === variationId) || [],
+    getSubstitutions: () => 
+      query.data?.filter(item => item.is_substitution) || [],
   };
 } 

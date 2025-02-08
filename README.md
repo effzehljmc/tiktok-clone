@@ -23,6 +23,30 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 - ✅ Cuisine type indicators
 - ✅ Dietary preference tags
 
+### Dynamic Recipe Variations
+- ✅ AI-powered recipe variations
+- ✅ Interactive recipe chat assistant
+- ✅ Variation history tracking
+- ✅ Smart ingredient substitutions
+- ✅ Variation type detection (dietary, portions, methods)
+- ✅ Real-time recipe modifications
+- [ ] Nutrition analysis and optimization
+- [ ] Cooking technique guidance
+- [ ] Context-aware recipe assistance
+- [ ] Voice command support
+- [ ] Multi-language recipe support
+
+### AI Agent Service
+- ✅ OpenAI integration with caching
+- ✅ Modular prompt builder system
+- ✅ Specialized recipe variation prompts
+- ✅ Error handling with retry logic
+- ✅ Response caching and optimization
+- [ ] Telemetry and metrics collection
+- [ ] Circuit breaker implementation
+- [ ] Request throttling
+- [ ] Comprehensive testing suite
+
 ### Shopping List
 - ✅ Add ingredients from recipes
 - ✅ Check/uncheck items
@@ -31,6 +55,13 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 - ✅ Delete individual items
 - ✅ Clear checked items
 - ✅ Toast notifications
+- ✅ Variation support with substitutions
+- ✅ Smart ingredient combining
+- ✅ Variation-aware quantity scaling
+- [ ] Quantity adjustment controls
+- [ ] Enhanced substitution display
+- [ ] Improved variation grouping UI
+- [ ] Better ingredient organization
 
 ### Social Features
 - ✅ Comments system with real-time updates
@@ -46,6 +77,8 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 - ✅ OpenAI-powered content analysis
 - ✅ Video metrics tracking
 - ✅ User engagement analytics
+- [ ] Variation preference learning
+- [ ] AI interaction based recommendations
 
 Detailed documentation for each feature can be found in the [docs/features](docs/features) directory.
 

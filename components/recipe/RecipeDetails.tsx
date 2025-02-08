@@ -8,6 +8,7 @@ import Toast from 'react-native-toast-message';
 import { Recipe } from '@/types/recipe';
 import { RecipeChat } from './RecipeChat';
 import { Video } from '@/types/saved-recipe';
+import { RecipeVariation } from '@/services/recipeVariations';
 
 interface RecipeDetailsProps {
   isVisible: boolean;
@@ -19,6 +20,7 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
   const { user } = useAuth();
   const { addToList, isAdding } = useShoppingList(user?.id || '');
   const [isChatVisible, setIsChatVisible] = useState(false);
+  const [selectedVariation, setSelectedVariation] = useState<RecipeVariation | null>(null);
   
   const handleAddToShoppingList = async () => {
     if (!user) return;
@@ -27,19 +29,45 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
       console.log('Adding to shopping list:', {
         userId: user.id,
         recipeId: recipe.id,
-        ingredients: recipe.recipeMetadata?.ingredients
+        ingredients: recipe.recipeMetadata?.ingredients,
+        hasVariation: !!selectedVariation
       });
 
-      await addToList(
-        recipe.recipeMetadata?.ingredients.map(ingredient => ({
-          ingredient,
-          recipe_id: recipe.id
-        })) || []
-      );
+      const items = recipe.recipeMetadata?.ingredients.map(ingredient => ({
+        ingredient,
+        recipe_id: recipe.id,
+        variation_id: selectedVariation?.id,
+        is_substitution: false,
+        notes: selectedVariation ? `From ${selectedVariation.variationType.toLowerCase()} variation` : undefined
+      })) || [];
+
+      // If we have a variation, add any substituted ingredients
+      if (selectedVariation) {
+        const originalIngredients = new Set(recipe.recipeMetadata?.ingredients || []);
+        const variationIngredients = new Set(selectedVariation.ingredients);
+
+        // Add new ingredients from variation as substitutions
+        selectedVariation.ingredients
+          .filter(ingredient => !originalIngredients.has(ingredient))
+          .forEach(ingredient => {
+            items.push({
+              ingredient,
+              recipe_id: recipe.id,
+              variation_id: selectedVariation.id,
+              is_substitution: true,
+              notes: `Added in ${selectedVariation.variationType.toLowerCase()} variation`
+            });
+          });
+      }
+
+      await addToList(items);
+      
       Toast.show({
         type: 'success',
         text1: 'Added to shopping list',
-        text2: 'All ingredients have been added to your shopping list'
+        text2: selectedVariation 
+          ? 'Variation ingredients added to your shopping list'
+          : 'All ingredients have been added to your shopping list'
       });
     } catch (error) {
       console.error('Failed to add to shopping list:', error);
@@ -60,15 +88,18 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
     setIsChatVisible(true);
   };
 
-  const handleVariationCreated = () => {
+  const handleVariationCreated = (variation: RecipeVariation) => {
     console.log('Variation created for recipe:', {
       recipeId: recipe.id,
-      title: recipe.title
+      title: recipe.title,
+      variationId: variation.id,
+      variationType: variation.variationType
     });
+    setSelectedVariation(variation);
     Toast.show({
       type: 'success',
       text1: 'Variation Created',
-      text2: 'View and manage recipe variations in your Cookbook'
+      text2: 'Added to your shopping list'
     });
   };
 
@@ -90,7 +121,9 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
     >
       <View className="flex-1 bg-white">
         <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
-          <Text className="text-2xl font-bold flex-1">Recipe Details</Text>
+          <Text className="text-2xl font-bold flex-1">
+            {selectedVariation ? selectedVariation.title || 'Recipe Variation' : 'Recipe Details'}
+          </Text>
           <View className="flex-row items-center gap-6">
             {user && (
               <>
@@ -116,7 +149,7 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
             )}
             <TouchableOpacity 
               className="p-3"
-              onPress={handleChatPress}
+              onPress={() => setIsChatVisible(true)}
             >
               <Ionicons name="chatbubble-outline" size={28} color="black" />
             </TouchableOpacity>
@@ -127,23 +160,37 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
         </View>
 
         <ScrollView className="flex-1 p-4">
+          {selectedVariation && (
+            <View className="mb-4 bg-blue-50 p-4 rounded-lg">
+              <Text className="text-blue-800 font-medium">
+                Viewing {selectedVariation.variationType.toLowerCase()} variation
+              </Text>
+              <TouchableOpacity 
+                onPress={() => setSelectedVariation(null)}
+                className="mt-2 bg-blue-100 py-2 px-4 rounded-lg"
+              >
+                <Text className="text-blue-800 text-center">Back to Original Recipe</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View className="mb-6">
             <Text className="text-xl font-bold mb-3">Ingredients</Text>
-            {recipe.recipeMetadata?.ingredients.map((ingredient, index) => (
+            {(selectedVariation?.ingredients || recipe.recipeMetadata?.ingredients || []).map((ingredient, index) => (
               <Text key={index} className="text-gray-700 mb-1">• {ingredient}</Text>
             ))}
           </View>
 
           <View className="mb-6">
             <Text className="text-xl font-bold mb-3">Equipment Needed</Text>
-            {recipe.recipeMetadata?.equipment.map((item, index) => (
+            {(selectedVariation?.equipment || recipe.recipeMetadata?.equipment || []).map((item, index) => (
               <Text key={index} className="text-gray-700 mb-1">• {item}</Text>
             ))}
           </View>
 
           <View>
             <Text className="text-xl font-bold mb-3">Steps</Text>
-            {recipe.recipeMetadata?.steps.map((step, index) => (
+            {(selectedVariation?.steps || recipe.recipeMetadata?.steps || []).map((step, index) => (
               <View key={index} className="mb-4">
                 <Text className="text-lg font-semibold mb-2">{index + 1}.</Text>
                 <Text className="text-gray-700">{step.description}</Text>
