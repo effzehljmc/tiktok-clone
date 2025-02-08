@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SaveButton } from './SaveButton';
@@ -20,21 +20,16 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
   const { addToList, isAdding } = useShoppingList(user?.id || '');
   const [isChatVisible, setIsChatVisible] = useState(false);
   
-  useEffect(() => {
-    console.log('RecipeDetails mounted');
-    console.log('Recipe:', recipe);
-    console.log('isVisible:', isVisible);
-    console.log('User:', user);
-  }, []);
-
-  useEffect(() => {
-    console.log('Chat visibility changed:', isChatVisible);
-  }, [isChatVisible]);
-
   const handleAddToShoppingList = async () => {
     if (!user) return;
     
     try {
+      console.log('Adding to shopping list:', {
+        userId: user.id,
+        recipeId: recipe.id,
+        ingredients: recipe.recipeMetadata?.ingredients
+      });
+
       await addToList(
         recipe.recipeMetadata?.ingredients.map(ingredient => ({
           ingredient,
@@ -47,6 +42,7 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
         text2: 'All ingredients have been added to your shopping list'
       });
     } catch (error) {
+      console.error('Failed to add to shopping list:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -56,11 +52,34 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
   };
   
   const handleChatPress = () => {
-    console.log('Chat button pressed');
-    console.log('Current isChatVisible:', isChatVisible);
+    console.log('Opening chat for recipe:', {
+      recipeId: recipe.id,
+      title: recipe.title,
+      hasMetadata: !!recipe.recipeMetadata
+    });
     setIsChatVisible(true);
-    console.log('Set isChatVisible to true');
   };
+
+  const handleVariationCreated = () => {
+    console.log('Variation created for recipe:', {
+      recipeId: recipe.id,
+      title: recipe.title
+    });
+    Toast.show({
+      type: 'success',
+      text1: 'Variation Created',
+      text2: 'View and manage recipe variations in your Cookbook'
+    });
+  };
+
+  console.log('Rendering RecipeDetails:', {
+    recipeId: recipe.id,
+    title: recipe.title,
+    hasUser: !!user,
+    userId: user?.id,
+    hasMetadata: !!recipe.recipeMetadata,
+    ingredientsCount: recipe.recipeMetadata?.ingredients.length
+  });
 
   return (
     <Modal
@@ -69,41 +88,38 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
       visible={isVisible}
       onRequestClose={onClose}
     >
-      <View 
-        className="flex-1 bg-white"
-        onLayout={() => console.log('Main View rendered')}
-      >
-        <View 
-          className="flex-row justify-between items-center p-4 border-b border-gray-200"
-          onLayout={() => console.log('Header View rendered')}
-        >
+      <View className="flex-1 bg-white">
+        <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
           <Text className="text-2xl font-bold flex-1">Recipe Details</Text>
-          <View 
-            className="flex-row items-center gap-6"
-            onLayout={() => console.log('Icons container rendered')}
-          >
+          <View className="flex-row items-center gap-6">
             {user && (
-              <TouchableOpacity 
-                className="p-3"
-                onPress={handleAddToShoppingList}
-                disabled={isAdding}
-              >
-                <Ionicons 
-                  name="cart-outline" 
-                  size={28} 
-                  color={isAdding ? "gray" : "black"} 
-                />
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity 
+                  className="p-3"
+                  onPress={handleAddToShoppingList}
+                  disabled={isAdding}
+                >
+                  <Ionicons 
+                    name="cart-outline" 
+                    size={28} 
+                    color={isAdding ? "gray" : "black"} 
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity className="p-3">
+                  <SaveButton 
+                    videoId={recipe.id} 
+                    userId={user.id} 
+                    size={28} 
+                  />
+                </TouchableOpacity>
+              </>
             )}
-            {user && (
-              <TouchableOpacity className="p-3">
-                <SaveButton 
-                  videoId={recipe.id} 
-                  userId={user.id} 
-                  size={28} 
-                />
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity 
+              className="p-3"
+              onPress={handleChatPress}
+            >
+              <Ionicons name="chatbubble-outline" size={28} color="black" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={onClose} className="p-3">
               <Ionicons name="close" size={28} color="black" />
             </TouchableOpacity>
@@ -140,6 +156,7 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
           isVisible={isChatVisible}
           onClose={() => setIsChatVisible(false)}
           recipe={recipe}
+          onVariationCreated={handleVariationCreated}
         />
       </View>
     </Modal>

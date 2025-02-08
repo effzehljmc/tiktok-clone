@@ -146,6 +146,8 @@ model RecipeVariation {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   aiPrompt        String   @map("ai_prompt") // Store the prompt that generated this variation
   originalPrompt  String   @map("original_prompt") // Store the user's original question
+  variationType   VariationType @map("variation_type")
+  metadata        Json?    // Store additional variation-specific metadata
   
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   recipe         RecipeMetadata @relation(fields: [recipeId], references: [id], onDelete: Cascade)
@@ -209,6 +211,16 @@ enum VideoCategory {
   DESSERT
   SNACKS
   DRINKS
+
+  @@schema("public")
+}
+
+enum VariationType {
+  DIETARY
+  INGREDIENT_SUBSTITUTION
+  PORTION_ADJUSTMENT
+  COOKING_METHOD
+  FLAVOR_PROFILE
 
   @@schema("public")
 }
