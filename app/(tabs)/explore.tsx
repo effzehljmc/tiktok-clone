@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoCategory } from '@prisma/client';
 import SearchResults from '@/components/search/SearchResults';
+import { RecommendedRecipes } from '@/components/recipe/RecommendedRecipes';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Shared color scheme
@@ -54,6 +55,8 @@ export default function ExploreScreen() {
   const handleDietSelect = useCallback((diet: typeof DIETARY_PREFERENCES[number]) => {
     setSelectedDiet(prev => prev === diet ? undefined : diet);
   }, []);
+
+  const isSearching = searchQuery.trim() || selectedCategory || selectedDiet;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -146,9 +149,9 @@ export default function ExploreScreen() {
           </ScrollView>
         </View>
 
-        {/* Search Results or Empty State */}
+        {/* Search Results or Recommended Recipes */}
         <View style={styles.resultsContainer}>
-          {searchQuery.trim() || selectedCategory || selectedDiet ? (
+          {isSearching ? (
             <SearchResults 
               query={searchQuery.trim()} 
               category={selectedCategory}
@@ -156,15 +159,10 @@ export default function ExploreScreen() {
               onClose={() => {}} // We don't need to close anything in the explore page
             />
           ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="search-outline" size={48} color={COLORS.whiteAlpha30} />
-              <Text style={styles.emptyTitle}>
-                Search for recipes by title, description, or tags
-              </Text>
-              <Text style={styles.emptySubtitle}>
-                Or browse by category and dietary preferences
-              </Text>
-            </View>
+            <>
+              <Text style={styles.sectionTitle}>Recommended For You</Text>
+              <RecommendedRecipes />
+            </>
           )}
         </View>
       </LinearGradient>

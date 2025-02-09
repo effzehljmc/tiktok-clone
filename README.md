@@ -77,6 +77,11 @@ A modern TikTok clone built with Expo, React Native, and TypeScript.
 - ✅ OpenAI-powered content analysis
 - ✅ Video metrics tracking
 - ✅ User engagement analytics
+- ✅ Transparent recommendation explanations
+  - Score-based explanations
+  - Dietary preference matching
+  - Engagement factor insights
+  - Interactive explanation UI
 - [ ] Variation preference learning
 - [ ] AI interaction based recommendations
 
