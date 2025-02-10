@@ -110,11 +110,6 @@ export function RecommendedRecipes() {
                     <Text style={styles.title} numberOfLines={2}>
                       {item.title}
                     </Text>
-                    <View style={styles.matchScore}>
-                      <Text style={styles.matchScoreText}>
-                        {Math.round(item.preference_score * 100)}% Match
-                      </Text>
-                    </View>
                   </View>
 
                   <RecommendationExplanation 
@@ -256,17 +251,6 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     marginRight: 12,
     lineHeight: 22,
-  },
-  matchScore: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-  },
-  matchScoreText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.white,
   },
   description: {
     fontSize: 14,

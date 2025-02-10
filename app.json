@@ -2,6 +2,7 @@
   "expo": {
     "name": "tiktok-clone",
     "slug": "tiktok-clone",
+    "owner": "lukasmchagas",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -64,9 +65,9 @@
       },
       "eas": {
         "projectId": "173654fe-0a29-4989-8f70-15ff6b3c69a0"
-      }
+      },
+      "BLACK_FOREST_LABS_API_KEY": "460c38aa-bfcc-4c35-952d-f33b911147143"
     },
-    "owner": "lukasmchagas",
     "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/173654fe-0a29-4989-8f70-15ff6b3c69a0"

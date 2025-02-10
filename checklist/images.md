@@ -174,6 +174,12 @@ Die **KI-Bildgenerierung** ergänzt deine App hervorragend, da sie sowohl das vi
    - ✓ Optimized image dimensions for each use case
    - ✓ Added comprehensive type safety with TypeScript
    - ✓ Successfully tested line-art cooking step illustrations
+   - ✓ Enhanced step-specific prompts:
+     - Added step sequence awareness (first, middle, final)
+     - Improved action focus with negative prompts
+     - Added stage-appropriate context
+     - Enhanced hand visibility in demonstrations
+     - Implemented step progression context
 
 6. **Step Illustrations Integration**
    - ✓ Created database schema for step illustrations
@@ -194,15 +200,36 @@ Die **KI-Bildgenerierung** ergänzt deine App hervorragend, da sie sowohl das vi
    - ✓ Implemented graceful fallbacks for failed loads
    - ✓ Added loading indicators during image fetch
    - ✓ Fixed transition animations for image display
+   - ✓ Improved step-specific image accuracy:
+     - Added step sequence awareness
+     - Enhanced action-focused prompts
+     - Implemented stage-appropriate visuals
+     - Added equipment context
+     - Improved hand visibility in demonstrations
 
 ## 📝 Next Steps
 
-1. **Recipe Preview Images**
-   - [ ] Add preview image generation to recipe creation
-   - [ ] Implement preview image regeneration
-   - [ ] Add style selection for preview images
-   - [ ] Create preview image gallery component
-   - [ ] Add social sharing for generated images
+1. **Variation Preview Images**
+   - [ ] Add preview image generation for recipe variations
+     - Generate when variation is created
+     - Reflect ingredient changes visually
+     - Show in variation history
+   - [ ] Implement regeneration option in chat
+     - Allow users to request new preview
+     - Keep variation context
+     - Show multiple options
+   - [ ] Add style preferences in user settings
+     - Global style selection
+     - Per-variation style override
+     - Style persistence
+   - [ ] Create variation preview gallery
+     - Show original vs variation
+     - Side-by-side comparison
+     - Visual change highlights
+   - [ ] Add sharing for variations with preview
+     - Share complete variation
+     - Include preview image
+     - Optimized for social media
 
 2. **Profile Pictures**
    - [ ] Add profile picture generation UI
@@ -217,6 +244,9 @@ Die **KI-Bildgenerierung** ergänzt deine App hervorragend, da sie sowohl das vi
    - [x] Implement preloading for common requests
    - [x] Add error recovery mechanisms
    - [ ] Improve feedback during generation
+   - [ ] Add step-specific style preferences
+   - [ ] Implement batch generation option
+   - [ ] Add image quality settings
 
 4. **Analytics & Monitoring**
    - [ ] Track generation success/failure rates
@@ -224,6 +254,8 @@ Die **KI-Bildgenerierung** ergänzt deine App hervorragend, da sie sowohl das vi
    - [ ] Track popular illustration styles
    - [ ] Implement user feedback collection
    - [ ] Add usage analytics dashboard
+   - [ ] Monitor step-specific success rates
+   - [ ] Track prompt effectiveness
 
 ## 🔄 Future Considerations
 
