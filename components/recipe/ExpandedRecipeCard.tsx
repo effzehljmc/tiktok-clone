@@ -31,17 +31,15 @@ interface RecipeContent {
 async function preloadImages(illustrations: {[key: number]: string}) {
   const urls = Object.values(illustrations);
   try {
-    console.log('Preloading images:', urls);
     await Promise.all(urls.map(async (url) => {
       try {
         await Image.prefetch(url);
-        console.log('Successfully preloaded:', url);
       } catch (err) {
-        console.error('Failed to preload specific image:', url, err);
+        // Keep error handling but remove logging
       }
     }));
   } catch (err) {
-    console.error('Failed to preload images:', err);
+    // Keep error handling but remove logging
   }
 }
 
@@ -58,20 +56,9 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
   const [stepIllustrations, setStepIllustrations] = useState<{[key: number]: string}>({});
   const [isLoadingIllustrations, setIsLoadingIllustrations] = useState(true);
 
-  // Add logging for initial recipe prop
-  useEffect(() => {
-    console.log('Initial recipe prop:', {
-      id: recipe.id,
-      metadataId: recipe.recipeMetadata?.id,
-      title: recipe.title
-    });
-  }, []);
-
   // Load variations when component mounts
   useEffect(() => {
     if (user && recipe.id) {
-      // Avoid logging full recipe object which may contain circular references
-      console.log('Loading variations for recipe:', recipe.id);
       loadVariations();
     }
   }, [user, recipe.id]);
@@ -79,7 +66,6 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
   // Load illustrations when component mounts
   useEffect(() => {
     if (recipe.recipeMetadata?.id) {
-      console.log('Loading illustrations for recipe:', recipe.recipeMetadata.id);
       loadIllustrations();
     }
   }, [recipe.recipeMetadata?.id]);
@@ -105,13 +91,9 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
   const loadIllustrations = async () => {
     setIsLoadingIllustrations(true);
     try {
-      if (!recipe.recipeMetadata?.id) {
-        console.log('No recipe metadata id found');
-        return;
-      }
+      if (!recipe.recipeMetadata?.id) return;
       
       const illustrations = await getStepIllustrations(recipe.recipeMetadata.id);
-      console.log('Loaded illustrations count:', illustrations.length);
       
       // Create a map of step index to image URL
       const illustrationMap = illustrations.reduce((acc, ill) => {
@@ -121,8 +103,6 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
         return acc;
       }, {} as {[key: number]: string});
       
-      console.log('Created illustration map with keys:', Object.keys(illustrationMap));
-      
       // Set the illustrations first so they start loading
       setStepIllustrations(illustrationMap);
       
@@ -130,7 +110,6 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
       await preloadImages(illustrationMap);
       
     } catch (err) {
-      console.error('Failed to load illustrations:', err);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -140,12 +119,6 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
       setIsLoadingIllustrations(false);
     }
   };
-
-  // Add a useEffect to monitor state changes
-  useEffect(() => {
-    console.log('Current stepIllustrations:', stepIllustrations);
-    console.log('Current expandedSteps:', expandedSteps);
-  }, [stepIllustrations, expandedSteps]);
 
   const handleAddToShoppingList = async () => {
     if (!user) return;
@@ -195,15 +168,6 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
 
   const content = getCurrentContent();
   
-  // Avoid logging full content object
-  console.log('Recipe content stats:', {
-    hasTitle: !!content.title,
-    ingredientsCount: content.ingredients?.length || 0,
-    equipmentCount: content.equipment?.length || 0,
-    stepsCount: content.steps?.length || 0,
-    recipeId: selectedVariation?.id || recipe.id
-  });
-
   const toggleStepExpansion = (stepIndex: number) => {
     setExpandedSteps(prev => 
       prev.includes(stepIndex) 
@@ -213,17 +177,10 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
   };
 
   const handleGenerateImage = async (step: { description: string }, stepIndex: number) => {
-    console.log('handleGenerateImage called with:', { step, stepIndex });
-    
-    if (generatingImageForStep !== null) {
-      console.log('Already generating an image');
-      return;
-    }
+    if (generatingImageForStep !== null) return;
 
-    // Get the recipe metadata ID from the full recipe object
     const recipeMetadataId = recipe.recipeMetadata?.id;
     if (!recipeMetadataId) {
-      console.log('No recipe metadata id found');
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -238,28 +195,21 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
         action: step.description,
         ingredients: content.ingredients,
         equipment: content.equipment,
-        style: user?.illustration_style || 'photorealistic'
+        style: user?.illustration_style || 'photorealistic',
+        stepNumber: stepIndex + 1,
+        totalSteps: content.steps.length
       });
       
-      console.log('Generated prompt options:', options);
       const result = await safeGenerateImage(options);
-      console.log('Image generation result:', result);
       
       if (result.result?.sample) {
         const imageUrl = result.result.sample;
-        // Save the illustration using the recipe metadata id
-        console.log('Saving illustration with:', {
-          recipeId: recipeMetadataId,
-          stepIndex,
-          imageUrl
-        });
         await saveStepIllustration(recipeMetadataId, stepIndex, imageUrl);
         setStepIllustrations(prev => ({
           ...prev,
           [stepIndex]: imageUrl
         }));
         setExpandedSteps(prev => [...prev, stepIndex]);
-        console.log('Successfully generated and saved illustration for step:', stepIndex);
         Toast.show({
           type: 'success',
           text1: 'Generated illustration',
@@ -267,7 +217,6 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
         });
       }
     } catch (err) {
-      console.error('Failed to generate image:', err);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -391,7 +340,6 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
                                     text1: 'Variation deleted successfully'
                                   });
                                 } catch (error) {
-                                  console.error('Failed to delete variation:', error);
                                   Toast.show({
                                     type: 'error',
                                     text1: 'Failed to delete variation'
@@ -516,24 +464,9 @@ export function ExpandedRecipeCard({ recipe, onClose }: ExpandedRecipeCardProps)
                             }}
                             contentFit="cover"
                             transition={200}
-                            onLoadStart={() => {
-                              console.log('🔵 IMAGE LOAD START:', {
-                                step: index,
-                                url: stepIllustrations[index]
-                              });
-                            }}
-                            onLoad={() => {
-                              console.log('✅ IMAGE LOADED:', {
-                                step: index,
-                                url: stepIllustrations[index]
-                              });
-                            }}
+                            onLoadStart={() => {}}
+                            onLoad={() => {}}
                             onError={(error) => {
-                              console.log('❌ IMAGE ERROR:', {
-                                step: index,
-                                url: stepIllustrations[index],
-                                error
-                              });
                               // When Azure URL fails, update state to remove the failed URL
                               if (error?.error?.includes('403')) {
                                 setStepIllustrations(prev => {
