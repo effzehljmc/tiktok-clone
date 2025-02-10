@@ -41,6 +41,7 @@ export function useSavedRecipes(userId: string) {
               image
             ),
             recipe_metadata (
+              id,
               cooking_time,
               difficulty,
               cuisine,
@@ -85,6 +86,7 @@ export function useSavedRecipes(userId: string) {
             avatarUrl: item.video.creator.image
           } : null,
           recipeMetadata: item.video.recipe_metadata ? {
+            id: item.video.recipe_metadata.id,
             cookingTime: item.video.recipe_metadata.cooking_time,
             difficulty: item.video.recipe_metadata.difficulty,
             cuisine: item.video.recipe_metadata.cuisine,

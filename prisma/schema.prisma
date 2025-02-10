@@ -19,6 +19,7 @@ model User {
   bio           String?
   dietTags      String[]  @default([]) @map("diet_tags")
   dislikedIngredients String[] @default([]) @map("disliked_ingredients")
+  illustrationStyle String    @default("photorealistic") @map("illustration_style")
   createdAt     DateTime  @default(now()) @map("created_at")
   videos        Video[]
   likes         Like[]
@@ -117,6 +118,21 @@ model VideoMetrics {
   @@schema("public")
 }
 
+model StepIllustration {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  recipeId      String   @map("recipe_id") @db.Uuid
+  stepIndex     Int      @map("step_index")
+  imageUrl      String   @map("image_url")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  
+  recipe        RecipeMetadata @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeId, stepIndex])
+  @@index([recipeId])
+  @@map("step_illustrations")
+  @@schema("public")
+}
+
 model RecipeMetadata {
   id            String   @id @default(uuid()) @db.Uuid
   videoId       String   @unique @map("video_id") @db.Uuid
@@ -131,6 +147,7 @@ model RecipeMetadata {
   steps         Json     // Array of {timestamp: number, description: string}
   video         Video    @relation(fields: [videoId], references: [id])
   variations    RecipeVariation[]
+  illustrations StepIllustration[]
 
   @@index([videoId])
   @@map("recipe_metadata")

@@ -90,11 +90,11 @@ export default function CookbookScreen() {
                     <View style={styles.statsContainer}>
                       <View style={styles.stat}>
                         <Ionicons name="eye-outline" size={16} color={COLORS.whiteAlpha60} />
-                        <Text style={styles.statText}>{item.video?.metrics?.[0]?.watchedSeconds || 0}</Text>
+                        <Text style={styles.statText}>{item.video?.viewsCount || 0}</Text>
                       </View>
                       <View style={styles.stat}>
                         <Ionicons name="heart-outline" size={16} color={COLORS.whiteAlpha60} />
-                        <Text style={styles.statText}>{item.video?.likes?.length || 0}</Text>
+                        <Text style={styles.statText}>{item.video?.likesCount || 0}</Text>
                       </View>
                     </View>
                     <TouchableOpacity style={styles.moreButton}>

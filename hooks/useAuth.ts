@@ -2,14 +2,22 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { supabase } from '@/utils/supabase';
 import React from 'react';
 import { handleSignUp as authHandleSignUp } from '@/utils/auth-hooks';
+import { ImageStyle } from '@/services/prompts/imagePrompts';
 
-interface User {
+export interface User {
   id: string;
+  username: string;
   email: string;
-  username: string | null;
-  image?: string;
+  image?: string | null;
   diet_tags?: string[];
   disliked_ingredients?: string[];
+  illustration_style?: ImageStyle;
+}
+
+interface UpdatePreferencesParams {
+  diet_tags?: string[];
+  disliked_ingredients?: string[];
+  illustration_style?: ImageStyle;
 }
 
 interface AuthContextType {
@@ -19,7 +27,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
   getUser: (userId: string) => Promise<User | null>;
-  updatePreferences: (preferences: { diet_tags?: string[]; disliked_ingredients?: string[] }) => Promise<void>;
+  updatePreferences: (preferences: { diet_tags?: string[]; disliked_ingredients?: string[]; illustration_style?: ImageStyle }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -128,7 +136,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     }
   }
 
-  async function updatePreferences(preferences: { diet_tags?: string[]; disliked_ingredients?: string[] }) {
+  async function updatePreferences(preferences: { diet_tags?: string[]; disliked_ingredients?: string[]; illustration_style?: ImageStyle }) {
     if (!user) return;
 
     try {
@@ -136,7 +144,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
         .from('User')
         .update({
           diet_tags: preferences.diet_tags ?? user.diet_tags ?? [],
-          disliked_ingredients: preferences.disliked_ingredients ?? user.disliked_ingredients ?? []
+          disliked_ingredients: preferences.disliked_ingredients ?? user.disliked_ingredients ?? [],
+          illustration_style: preferences.illustration_style ?? user.illustration_style
         })
         .eq('id', user.id);
 
@@ -146,7 +155,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       setUser(prev => prev ? {
         ...prev,
         diet_tags: preferences.diet_tags ?? prev.diet_tags,
-        disliked_ingredients: preferences.disliked_ingredients ?? prev.disliked_ingredients
+        disliked_ingredients: preferences.disliked_ingredients ?? prev.disliked_ingredients,
+        illustration_style: preferences.illustration_style ?? prev.illustration_style
       } : null);
     } catch (error) {
       console.error('Error updating preferences:', error);

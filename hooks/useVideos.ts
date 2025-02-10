@@ -86,102 +86,112 @@ export function useVideos(options?: UseVideosOptions) {
   return useQuery({
     queryKey: ['videos', options?.category, options?.categories, options?.difficulty, options?.dietaryTag] as const,
     queryFn: async () => {
-      let query = supabase
-        .from('videos')
-        .select(`
-          id,
-          title,
-          description,
-          video_url,
-          thumbnail_url,
-          duration,
-          views_count,
-          likes_count,
-          comments_count,
-          status,
-          is_private,
-          creator_id,
-          category,
-          tags,
-          created_at,
-          updated_at,
-          creator:User (
+      try {
+        let query = supabase
+          .from('videos')
+          .select(`
             id,
-            username,
-            image
-          ),
-          likes (
-            id,
-            user_id
-          ),
-          recipe_metadata (
-            cooking_time,
-            difficulty,
-            servings,
-            calories,
-            dietary_tags,
-            ingredients,
-            steps,
-            equipment,
-            cuisine
-          )
-        `)
-        .eq('status', 'PUBLISHED')
-        .eq('is_private', false);
+            title,
+            description,
+            video_url,
+            thumbnail_url,
+            duration,
+            views_count,
+            likes_count,
+            comments_count,
+            status,
+            is_private,
+            creator_id,
+            category,
+            tags,
+            created_at,
+            updated_at,
+            creator:User (
+              id,
+              username,
+              image
+            ),
+            likes (
+              id,
+              user_id
+            ),
+            recipe_metadata (
+              cooking_time,
+              difficulty,
+              servings,
+              calories,
+              dietary_tags,
+              ingredients,
+              steps,
+              equipment,
+              cuisine
+            )
+          `)
+          .eq('status', 'PUBLISHED')
+          .eq('is_private', false);
 
-      if (options?.categories) {
-        query = query.in('category', options.categories);
-      } else if (options?.category) {
-        query = query.eq('category', options.category);
+        if (options?.categories) {
+          query = query.in('category', options.categories);
+        } else if (options?.category) {
+          query = query.eq('category', options.category);
+        }
+
+        if (options?.difficulty) {
+          query = query.eq('recipe_metadata.difficulty', options.difficulty);
+        }
+
+        if (options?.dietaryTag) {
+          query = query.contains('recipe_metadata.dietary_tags', [options.dietaryTag]);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        if (!data || data.length === 0) {
+          console.warn('No videos found');
+          return [];
+        }
+
+        const typedData = (data as unknown) as VideoData[];
+        
+        return typedData.map(video => ({
+          id: video.id,
+          url: video.video_url,
+          title: video.title,
+          caption: video.description,
+          thumbnailUrl: video.thumbnail_url,
+          createdAt: video.created_at,
+          creator: {
+            id: video.creator.id,
+            username: video.creator.username,
+            avatarUrl: video.creator.image,
+          },
+          likesCount: video.likes_count,
+          isLikedByCurrentUser: video.likes.some(like => like.user_id === user?.id),
+          commentsCount: video.comments_count,
+          viewsCount: video.views_count,
+          isPrivate: video.is_private,
+          status: video.status,
+          recipeMetadata: video.recipe_metadata ? {
+            cookingTime: video.recipe_metadata.cooking_time,
+            difficulty: video.recipe_metadata.difficulty,
+            servings: video.recipe_metadata.servings,
+            calories: video.recipe_metadata.calories ?? undefined,
+            dietaryTags: video.recipe_metadata.dietary_tags,
+            ingredients: video.recipe_metadata.ingredients,
+            steps: video.recipe_metadata.steps,
+            equipment: video.recipe_metadata.equipment,
+            cuisine: video.recipe_metadata.cuisine,
+          } : undefined,
+        }));
+      } catch (error) {
+        console.error('Error in useVideos:', error);
+        throw error;
       }
-
-      if (options?.difficulty) {
-        query = query.eq('recipe_metadata.difficulty', options.difficulty);
-      }
-
-      if (options?.dietaryTag) {
-        query = query.contains('recipe_metadata.dietary_tags', [options.dietaryTag]);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching videos:', error);
-        return [];
-      }
-
-      const typedData = (data as unknown) as VideoData[];
-      
-      return typedData.map(video => ({
-        id: video.id,
-        url: video.video_url,
-        title: video.title,
-        caption: video.description,
-        thumbnailUrl: video.thumbnail_url,
-        createdAt: video.created_at,
-        creator: {
-          id: video.creator.id,
-          username: video.creator.username,
-          avatarUrl: video.creator.image,
-        },
-        likesCount: video.likes_count,
-        isLikedByCurrentUser: video.likes.some(like => like.user_id === user?.id),
-        commentsCount: video.comments_count,
-        viewsCount: video.views_count,
-        isPrivate: video.is_private,
-        status: video.status,
-        recipeMetadata: video.recipe_metadata ? {
-          cookingTime: video.recipe_metadata.cooking_time,
-          difficulty: video.recipe_metadata.difficulty,
-          servings: video.recipe_metadata.servings,
-          calories: video.recipe_metadata.calories ?? undefined,
-          dietaryTags: video.recipe_metadata.dietary_tags,
-          ingredients: video.recipe_metadata.ingredients,
-          steps: video.recipe_metadata.steps,
-          equipment: video.recipe_metadata.equipment,
-          cuisine: video.recipe_metadata.cuisine,
-        } : undefined,
-      }));
     },
     // React Query Caching-Optionen
     staleTime: 5 * 60 * 1000,     // Daten sind 5 Minuten "frisch"

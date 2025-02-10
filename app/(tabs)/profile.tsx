@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { decode } from 'base64-arraybuffer';
 import { Button, Input } from '@rneui/themed';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ImageStyle } from '@/services/prompts/imagePrompts';
 
 const DIETARY_PREFERENCES = [
   'VEGETARIAN',
@@ -28,16 +29,27 @@ const DIETARY_PREFERENCES = [
 ] as const;
 type DietaryPreference = typeof DIETARY_PREFERENCES[number];
 
+const ILLUSTRATION_STYLES: { label: string; value: ImageStyle }[] = [
+  { label: 'Photorealistic', value: 'photorealistic' },
+  { label: 'Minimalistic', value: 'minimalistic' },
+  { label: 'Cartoon', value: 'cartoon' },
+  { label: 'Line Art', value: 'line-art' },
+  { label: 'Watercolor', value: 'watercolor' },
+];
+
 export default function ProfileScreen() {
   const { user, signOut, updatePreferences } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [selectedDietTags, setSelectedDietTags] = useState<DietaryPreference[]>([]);
   const [dislikedIngredients, setDislikedIngredients] = useState('');
+  const [selectedStyle, setSelectedStyle] = useState<ImageStyle>('photorealistic');
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (user) {
       setSelectedDietTags((user.diet_tags ?? []) as DietaryPreference[]);
       setDislikedIngredients(user.disliked_ingredients?.join(', ') ?? '');
+      setSelectedStyle((user.illustration_style ?? 'photorealistic') as ImageStyle);
     }
   }, [user]);
 
@@ -142,7 +154,8 @@ export default function ProfileScreen() {
     try {
       await updatePreferences({
         diet_tags: selectedDietTags,
-        disliked_ingredients: dislikedIngredients.split(',').map(ing => ing.trim()).filter(Boolean)
+        disliked_ingredients: dislikedIngredients.split(',').map(ing => ing.trim()).filter(Boolean),
+        illustration_style: selectedStyle
       });
       Alert.alert('Success', 'Preferences updated successfully!');
     } catch (error) {
@@ -159,9 +172,17 @@ export default function ProfileScreen() {
         >
           <View style={styles.header}>
             <Text style={styles.title}>{user.username || 'Profile'}</Text>
-            <TouchableOpacity onPress={signOut} style={styles.logoutButton}>
-              <Ionicons name="log-out-outline" size={24} color="#fff" />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity 
+                onPress={() => setShowSettings(true)} 
+                style={styles.iconButton}
+              >
+                <Ionicons name="settings-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={signOut} style={styles.iconButton}>
+                <Ionicons name="log-out-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.profileInfo}>
@@ -251,6 +272,76 @@ export default function ProfileScreen() {
             titleStyle={styles.buttonText}
             containerStyle={[styles.buttonContainer, { marginTop: 16 }]}
           />
+
+          <Button
+            title="Test Image Generation"
+            onPress={() => router.push('/tests/image-generation')}
+            ViewComponent={LinearGradient}
+            linearGradientProps={{
+              colors: ['#2563eb', '#1d4ed8'],
+              start: { x: 0, y: 0 },
+              end: { x: 1, y: 0 },
+            }}
+            buttonStyle={styles.button}
+            titleStyle={styles.buttonText}
+            containerStyle={[styles.buttonContainer, { marginTop: 16 }]}
+          />
+          <View style={{ height: 50 }} />
+
+          {/* Settings Modal */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={showSettings}
+            onRequestClose={() => setShowSettings(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Settings</Text>
+                  <TouchableOpacity 
+                    onPress={() => setShowSettings(false)}
+                    style={styles.closeButton}
+                  >
+                    <Ionicons name="close" size={24} color="white" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.settingSection}>
+                  <Text style={styles.settingTitle}>Illustration Style</Text>
+                  <View style={styles.styleOptions}>
+                    {ILLUSTRATION_STYLES.map(({ label, value }) => (
+                      <TouchableOpacity
+                        key={value}
+                        style={[
+                          styles.styleOption,
+                          selectedStyle === value && styles.styleOptionSelected
+                        ]}
+                        onPress={() => setSelectedStyle(value)}
+                      >
+                        <Text style={[
+                          styles.styleOptionText,
+                          selectedStyle === value && styles.styleOptionTextSelected
+                        ]}>
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={async () => {
+                    await handlePreferencesUpdate();
+                    setShowSettings(false);
+                  }}
+                >
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </LinearGradient>
       </ScrollView>
     </SafeAreaView>
@@ -411,5 +502,118 @@ const styles = StyleSheet.create({
   buttonContainer: {
     borderRadius: 16,
     overflow: 'hidden',
+  },
+  styleContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 24,
+  },
+  styleButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  styleButtonSelected: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  styleButtonText: {
+    color: '#999',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  styleButtonTextSelected: {
+    color: '#fff',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 24,
+    padding: 24,
+    maxWidth: 500,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  closeButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  settingSection: {
+    marginBottom: 24,
+  },
+  settingTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 16,
+  },
+  styleOptions: {
+    flexDirection: 'column',
+    gap: 12,
+  },
+  styleOption: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  styleOptionSelected: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+  styleOptionText: {
+    color: '#999',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  styleOptionTextSelected: {
+    color: '#fff',
+  },
+  saveButton: {
+    backgroundColor: '#2563eb',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

@@ -1,4 +1,4 @@
-import { StyleSheet, View, StatusBar, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, StatusBar, ActivityIndicator, Text } from 'react-native';
 import { RecipeFeed } from '@/components/recipe/RecipeFeed';
 import { VideoFeed } from '@/components/video/VideoFeed';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,16 +9,34 @@ import { useState, useEffect } from 'react';
 import { TouchableOpacity } from 'react-native';
 import SearchOverlay from '@/components/search-overlay';
 import { useVideos } from '@/hooks/useVideos';
+import { Platform } from 'react-native';
 
 const Tab = createMaterialTopTabNavigator();
 
 function ForYouTab() {
-  const { data: videos, isLoading } = useVideos();
+  const { data: videos, isLoading, error } = useVideos();
 
-  if (isLoading || !videos) {
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  if (error) {
+    console.error('Error loading videos:', error);
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ color: 'white' }}>Could not load videos. Please try again.</Text>
+      </View>
+    );
+  }
+
+  if (!videos || videos.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ color: 'white' }}>No videos available</Text>
       </View>
     );
   }
@@ -35,11 +53,63 @@ export default function FeedScreen() {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   useEffect(() => {
-    StatusBar.setTranslucent(true);
-    StatusBar.setBackgroundColor('transparent');
-    StatusBar.setBarStyle('light-content');
+    // Plattform-spezifische Statusbar-Konfiguration
+    if (Platform.OS === 'ios') {
+      StatusBar.setBarStyle('light-content');
+    } else {
+      StatusBar.setTranslucent(true);
+      StatusBar.setBackgroundColor('transparent');
+      StatusBar.setBarStyle('light-content');
+    }
   }, []);
 
+  // Fallback wenn die Tab-Navigation fehlschlägt
+  const [shouldUseFallbackNavigation, setShouldUseFallbackNavigation] = useState(false);
+
+  useEffect(() => {
+    const checkIOSVersion = async () => {
+      if (Platform.OS === 'ios') {
+        const version = parseInt(Platform.Version, 10);
+        setShouldUseFallbackNavigation(version >= 18);
+      }
+    };
+    checkIOSVersion();
+  }, []);
+
+  if (shouldUseFallbackNavigation) {
+    return (
+      <View style={{ flex: 1, backgroundColor: 'black' }}>
+        <SafeAreaView style={styles.tabContainer} edges={['bottom', 'left', 'right']}>
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.customTabBar}>
+            <TouchableOpacity 
+              style={[styles.customTab, currentTab === 'ForYou' && styles.activeTab]}
+              onPress={() => setCurrentTab('ForYou')}
+            >
+              <Text style={[styles.customTabText, currentTab === 'ForYou' && styles.activeTabText]}>
+                For You
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.customTab, currentTab === 'Recipe' && styles.activeTab]}
+              onPress={() => setCurrentTab('Recipe')}
+            >
+              <Text style={[styles.customTabText, currentTab === 'Recipe' && styles.activeTabText]}>
+                Recipe
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {currentTab === 'ForYou' ? <ForYouTab /> : <RecipeTab />}
+          <SearchOverlay 
+            isVisible={isSearchVisible}
+            onClose={() => setIsSearchVisible(false)}
+          />
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  // Original Tab Navigator für iOS 17 und darunter
   return (
     <View style={{ flex: 1, backgroundColor: 'black' }}>
       <SafeAreaView style={styles.tabContainer} edges={['bottom', 'left', 'right']}>
@@ -141,6 +211,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000',
+  },
+  customTabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    padding: 10,
+  },
+  customTab: {
+    padding: 10,
+    borderRadius: 10,
+  },
+  activeTab: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  customTabText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#fff',
   },
 });
 

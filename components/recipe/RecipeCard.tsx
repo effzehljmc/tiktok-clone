@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,17 @@ interface RecipeCardProps {
 export function RecipeCard({ recipe }: RecipeCardProps) {
   const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    if (isExpanded) {
+      console.log('Opening expanded recipe:', {
+        id: recipe.id,
+        title: recipe.title,
+        hasMetadata: !!recipe.recipeMetadata,
+        metadata: recipe.recipeMetadata
+      });
+    }
+  }, [isExpanded, recipe]);
 
   return (
     <>

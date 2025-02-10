@@ -120,45 +120,66 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-white">
+        {/* Title Bar */}
         <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
-          <Text className="text-2xl font-bold flex-1">
+          <Text className="text-2xl font-bold flex-shrink-0 mr-4">
             {selectedVariation ? selectedVariation.title || 'Recipe Variation' : 'Recipe Details'}
           </Text>
-          <View className="flex-row items-center gap-6">
+          <TouchableOpacity onPress={onClose} className="p-2">
+            <Ionicons name="close" size={28} color="black" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Controls Bar */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="px-4 py-2 border-b border-gray-100"
+        >
+          <View className="flex-row items-center gap-3">
             {user && (
               <>
                 <TouchableOpacity 
-                  className="p-3"
+                  className="flex-row items-center bg-gray-100 px-4 py-2 rounded-full"
                   onPress={handleAddToShoppingList}
                   disabled={isAdding}
                 >
                   <Ionicons 
                     name="cart-outline" 
-                    size={28} 
-                    color={isAdding ? "gray" : "black"} 
+                    size={20} 
+                    color={isAdding ? "#999" : "#000"} 
                   />
+                  <Text className="ml-2 text-sm font-medium text-gray-900">
+                    Add to Cart
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity className="p-3">
+
+                <TouchableOpacity className="flex-row items-center bg-gray-100 px-4 py-2 rounded-full">
                   <SaveButton 
                     videoId={recipe.id} 
                     userId={user.id} 
-                    size={28} 
+                    size={20}
                   />
+                  <Text className="ml-2 text-sm font-medium text-gray-900">
+                    Save
+                  </Text>
                 </TouchableOpacity>
               </>
             )}
+
             <TouchableOpacity 
-              className="p-3"
+              className="flex-row items-center bg-gray-100 px-4 py-2 rounded-full"
               onPress={() => setIsChatVisible(true)}
             >
-              <Ionicons name="chatbubble-outline" size={28} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onClose} className="p-3">
-              <Ionicons name="close" size={28} color="black" />
+              <Ionicons name="chatbubble-outline" size={20} color="black" />
+              <Text className="ml-2 text-sm font-medium text-gray-900">
+                Variations
+              </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
 
+        {/* Main Content */}
         <ScrollView className="flex-1 p-4">
           {selectedVariation && (
             <View className="mb-4 bg-blue-50 p-4 rounded-lg">
