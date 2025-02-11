@@ -12,16 +12,16 @@ interface StepIllustrationProps {
     description: string;
     timestamp: number;
   };
-  ingredients?: string[];
-  equipment?: string[];
+  ingredients: string[];
+  equipment: string[];
   recipeId: string;
   stepIndex: number;
 }
 
 export function StepIllustration({ 
   step, 
-  ingredients, 
-  equipment, 
+  ingredients = [], 
+  equipment = [], 
   recipeId,
   stepIndex 
 }: StepIllustrationProps) {
@@ -35,9 +35,9 @@ export function StepIllustration({
     async function loadIllustration() {
       try {
         const illustrations = await getStepIllustrations(recipeId);
-        const savedIllustration = illustrations.find(i => i.stepIndex === stepIndex);
+        const savedIllustration = illustrations.find(i => i.step_index === stepIndex);
         if (savedIllustration) {
-          setImage(savedIllustration.imageUrl);
+          setImage(savedIllustration.image_url);
         }
       } catch (err) {
         console.error('Failed to load illustration:', err);

@@ -1,6 +1,9 @@
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, Text, StyleSheet, Platform } from 'react-native';
 import { VideoFeed } from '@/components/video/VideoFeed';
 import { useVideos } from '@/hooks/useVideos';
+
+// Synchroner Check für iOS 18
+const isIOS18OrHigher = Platform.OS === 'ios' && parseInt(Platform.Version, 10) >= 18;
 
 export function ForYouTab() {
   const { data: videos, isLoading, error } = useVideos();
