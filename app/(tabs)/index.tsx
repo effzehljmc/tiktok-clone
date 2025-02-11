@@ -54,16 +54,7 @@ export default function FeedScreen() {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
-  // Zusätzliche Padding für iOS 18
-  const extraTopPadding = Platform.OS === 'ios' && parseInt(Platform.Version, 10) >= 18 ? 10 : 0;
-
-  const safeAreaStyle = {
-    paddingTop: insets.top + extraTopPadding,
-    paddingBottom: insets.bottom,
-  };
-
   useEffect(() => {
-    // Plattform-spezifische Statusbar-Konfiguration
     if (Platform.OS === 'ios') {
       StatusBar.setBarStyle('light-content');
     } else {
@@ -73,7 +64,6 @@ export default function FeedScreen() {
     }
   }, []);
 
-  // Fallback wenn die Tab-Navigation fehlschlägt
   const [shouldUseFallbackNavigation, setShouldUseFallbackNavigation] = useState(false);
 
   useEffect(() => {
@@ -89,7 +79,7 @@ export default function FeedScreen() {
   if (shouldUseFallbackNavigation) {
     return (
       <View style={{ flex: 1, backgroundColor: 'black' }}>
-        <SafeAreaView style={[styles.tabContainer, safeAreaStyle]} edges={['bottom', 'left', 'right']}>
+        <SafeAreaView style={styles.tabContainer} edges={['left', 'right']}>
           {Platform.OS === 'ios' && parseInt(Platform.Version, 10) >= 18 ? (
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.8)' }]} />
           ) : (
@@ -113,7 +103,9 @@ export default function FeedScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-          {currentTab === 'ForYou' ? <ForYouTab /> : <RecipeTab />}
+          <View style={styles.contentContainer}>
+            {currentTab === 'ForYou' ? <ForYouTab /> : <RecipeTab />}
+          </View>
           <SearchOverlay 
             isVisible={isSearchVisible}
             onClose={() => setIsSearchVisible(false)}
@@ -123,10 +115,9 @@ export default function FeedScreen() {
     );
   }
 
-  // Original Tab Navigator für iOS 17 und darunter
   return (
     <View style={{ flex: 1, backgroundColor: 'black' }}>
-      <SafeAreaView style={[styles.tabContainer, safeAreaStyle]} edges={['bottom', 'left', 'right']}>
+      <SafeAreaView style={styles.tabContainer} edges={['left', 'right']}>
         {Platform.OS === 'ios' && parseInt(Platform.Version, 10) >= 18 ? (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.8)' }]} />
         ) : (
@@ -187,6 +178,10 @@ export default function FeedScreen() {
 
 const styles = StyleSheet.create({
   tabContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  contentContainer: {
     flex: 1,
     position: 'relative',
   },
