@@ -10,6 +10,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { View, Text, FlatList, Dimensions, StyleSheet, ListRenderItemInfo, TouchableOpacity, StatusBar, Platform, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import Header from '../header';
 import { VideoCategory } from '@prisma/client';
+import CommentsScreen from '../../app/comments';
 
 interface VideoFeedProps {
   videos: VideoType[];
@@ -21,6 +22,8 @@ export function VideoFeed({ videos, renderVideoOverlay, showSearchIcon = true }:
   const { trackVideoMetrics } = useVideoMetrics();
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [videoStatus, setVideoStatus] = useState<{ [key: string]: AVPlaybackStatus }>({});
+  const [showComments, setShowComments] = useState(false);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const windowHeight = Dimensions.get('window').height;
   const videoRefs = useRef<{ [key: string]: ExpoVideo | null }>({});
   const flatListRef = useRef<FlatList>(null);
@@ -177,11 +180,14 @@ export function VideoFeed({ videos, renderVideoOverlay, showSearchIcon = true }:
   }, []);
 
   const handleCommentPress = useCallback((videoId: string) => {
-    router.push({
-      pathname: "/comments",
-      params: { videoId }
-    });
-  }, [router]);
+    setSelectedVideoId(videoId);
+    setShowComments(true);
+  }, []);
+
+  const handleCloseComments = useCallback(() => {
+    setShowComments(false);
+    setSelectedVideoId(null);
+  }, []);
 
   const handleProfilePress = useCallback((creatorId: string) => {
     if (!creatorId) {
@@ -282,6 +288,13 @@ export function VideoFeed({ videos, renderVideoOverlay, showSearchIcon = true }:
       />
       {showSearchIcon && (
         <Header />
+      )}
+      {selectedVideoId && (
+        <CommentsScreen
+          isVisible={showComments}
+          onClose={handleCloseComments}
+          videoId={selectedVideoId}
+        />
       )}
     </View>
   );

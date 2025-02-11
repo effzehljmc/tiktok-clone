@@ -8,7 +8,7 @@ import { BlurView } from 'expo-blur';
 import { useState, useEffect, useRef } from 'react';
 import { TouchableOpacity } from 'react-native';
 import SearchOverlay from '@/components/search-overlay';
-import { ForYouTab } from './components/ForYouTab';
+import { ForYouTab } from '@/app/_components/ForYouTab';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue,

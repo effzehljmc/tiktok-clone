@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ListRenderItem, Dimensions, ActivityIndicator, GestureResponderEvent } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ListRenderItem, Dimensions, ActivityIndicator, Modal } from 'react-native';
 import { useComments } from '../hooks/useComments';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,21 +26,28 @@ interface Comment {
   };
 }
 
-const CommentsScreen: React.FC = () => {
-  const { videoId } = useLocalSearchParams<{ videoId: string }>();
+interface CommentsScreenProps {
+  isVisible: boolean;
+  onClose: () => void;
+  videoId: string;
+}
+
+const CommentsScreen: React.FC<CommentsScreenProps> = ({ isVisible, onClose, videoId }) => {
   const { comments, isLoading, isAddingComment, error, addComment, refetch } = useComments(videoId);
   const [newComment, setNewComment] = useState('');
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
-    translateY.value = withSpring(0, {
-      damping: 20,
-      stiffness: 90
-    });
-  }, []);
+    if (isVisible) {
+      setIsClosing(false);
+      translateY.value = withSpring(0, {
+        damping: 20,
+        stiffness: 90
+      });
+    }
+  }, [isVisible]);
 
   useEffect(() => {
     if (error) {
@@ -59,9 +65,9 @@ const CommentsScreen: React.FC = () => {
     translateY.value = withTiming(SCREEN_HEIGHT, {
       duration: 250
     }, () => {
-      runOnJS(router.back)();
+      runOnJS(onClose)();
     });
-  }, [router, isClosing]);
+  }, [onClose, isClosing]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }]
@@ -116,102 +122,109 @@ const CommentsScreen: React.FC = () => {
   ), [isLoading]);
 
   return (
-    <View style={[StyleSheet.absoluteFill, styles.modalOverlay]}>
-      <TouchableOpacity 
-        style={styles.backdrop} 
-        activeOpacity={1} 
-        onPress={handleClose}
-      />
-      <Animated.View style={[styles.container, animatedStyle, { 
-        paddingBottom: insets.bottom,
-        paddingTop: insets.top 
-      }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.handle} />
-            <Text style={styles.headerText}>
-              {comments?.length || 0} comments
-            </Text>
-            <TouchableOpacity 
-              onPress={handleClose} 
-              style={styles.closeButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <MaterialCommunityIcons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.headerBorder} />
-        </View>
-
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        >
-          {error ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>Failed to load comments</Text>
+    <Modal
+      visible={isVisible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}
+    >
+      <View style={[StyleSheet.absoluteFill, styles.modalOverlay]}>
+        <TouchableOpacity 
+          style={styles.backdrop} 
+          activeOpacity={1} 
+          onPress={handleClose}
+        />
+        <Animated.View style={[styles.container, animatedStyle, { 
+          paddingBottom: insets.bottom,
+          paddingTop: insets.top 
+        }]}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerContent}>
+              <View style={styles.handle} />
+              <Text style={styles.headerText}>
+                {comments?.length || 0} comments
+              </Text>
               <TouchableOpacity 
-                onPress={() => refetch()} 
-                style={styles.retryButton}
+                onPress={handleClose} 
+                style={styles.closeButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <MaterialCommunityIcons name="close" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
-          ) : (
-            <FlatList
-              data={comments}
-              renderItem={renderComment}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={[
-                styles.commentsList,
-                (!comments || comments.length === 0) && styles.emptyList
-              ]}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={ListEmptyComponent}
-              refreshing={isLoading}
-              onRefresh={handleRefresh}
-              onEndReachedThreshold={0.5}
-              initialNumToRender={10}
-              maxToRenderPerBatch={10}
-              windowSize={5}
-            />
-          )}
-          
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              value={newComment}
-              onChangeText={setNewComment}
-              placeholder="Add a comment..."
-              placeholderTextColor="#666"
-              multiline
-              maxLength={500}
-              editable={!isAddingComment}
-            />
-            <TouchableOpacity 
-              onPress={handleSubmitComment}
-              style={[
-                styles.sendButton,
-                (!newComment.trim() || isAddingComment) && styles.sendButtonDisabled
-              ]}
-              disabled={!newComment.trim() || isAddingComment}
-            >
-              {isAddingComment ? (
-                <ActivityIndicator size="small" color="#fe2c55" />
-              ) : (
-                <MaterialCommunityIcons 
-                  name="send" 
-                  size={24} 
-                  color={newComment.trim() ? '#fe2c55' : '#666'} 
-                />
-              )}
-            </TouchableOpacity>
+            <View style={styles.headerBorder} />
           </View>
-        </KeyboardAvoidingView>
-      </Animated.View>
-    </View>
+
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardView}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+          >
+            {error ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>Failed to load comments</Text>
+                <TouchableOpacity 
+                  onPress={() => refetch()} 
+                  style={styles.retryButton}
+                >
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <FlatList
+                data={comments}
+                renderItem={renderComment}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={[
+                  styles.commentsList,
+                  (!comments || comments.length === 0) && styles.emptyList
+                ]}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={ListEmptyComponent}
+                refreshing={isLoading}
+                onRefresh={handleRefresh}
+                onEndReachedThreshold={0.5}
+                initialNumToRender={10}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+              />
+            )}
+            
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                value={newComment}
+                onChangeText={setNewComment}
+                placeholder="Add a comment..."
+                placeholderTextColor="#666"
+                multiline
+                maxLength={500}
+                editable={!isAddingComment}
+              />
+              <TouchableOpacity 
+                onPress={handleSubmitComment}
+                style={[
+                  styles.sendButton,
+                  (!newComment.trim() || isAddingComment) && styles.sendButtonDisabled
+                ]}
+                disabled={!newComment.trim() || isAddingComment}
+              >
+                {isAddingComment ? (
+                  <ActivityIndicator size="small" color="#fe2c55" />
+                ) : (
+                  <MaterialCommunityIcons 
+                    name="send" 
+                    size={24} 
+                    color={newComment.trim() ? '#fe2c55' : '#666'} 
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </Animated.View>
+      </View>
+    </Modal>
   );
 };
 
@@ -225,11 +238,11 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   container: {
-    height: SCREEN_HEIGHT * 0.8,
-    backgroundColor: '#000',
+    height: SCREEN_HEIGHT * 0.75,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
     borderTopLeftRadius: 15,
     borderTopRightRadius: 15,
     overflow: 'hidden',
@@ -243,6 +256,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   headerContent: {
     flexDirection: 'row',
@@ -254,7 +268,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: '#666',
+    backgroundColor: '#fff',
     borderRadius: 2,
     position: 'absolute',
     top: -20,
@@ -272,7 +286,7 @@ const styles = StyleSheet.create({
   },
   headerBorder: {
     height: 1,
-    backgroundColor: '#444',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   loadingContainer: {
     flex: 1,
@@ -296,7 +310,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#333',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -320,7 +334,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   timestamp: {
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 12,
   },
   inputContainer: {
@@ -328,12 +342,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     borderTopWidth: 0.5,
-    borderTopColor: '#333',
-    backgroundColor: '#000',
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
   },
   input: {
     flex: 1,
-    backgroundColor: '#333',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -354,7 +368,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
     fontSize: 16,
   },
