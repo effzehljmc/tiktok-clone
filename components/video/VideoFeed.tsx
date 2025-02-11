@@ -208,6 +208,15 @@ export function VideoFeed({ videos, renderVideoOverlay, showSearchIcon = true }:
         useNativeControls={false}
         onError={(error) => {
           console.error(`Video playback error for ${item.title}:`, error);
+          // Fallback für iOS 18
+          if (Platform.OS === 'ios' && parseInt(Platform.Version, 10) >= 18) {
+            // Versuche Video neu zu laden
+            const videoRef = videoRefs.current[item.id];
+            if (videoRef) {
+              videoRef.loadAsync({ uri: item.url }, {}, false)
+                .catch(e => console.error('Reload failed:', e));
+            }
+          }
         }}
         onPlaybackStatusUpdate={(status) => {
           const prevStatus = videoStatus[item.id];

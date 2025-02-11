@@ -22,20 +22,32 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState<RecipeVariation | null>(null);
   
+  // Ensure recipe has required fields
+  const enrichedRecipe: Video = {
+    ...recipe,
+    thumbnailUrl: recipe.thumbnailUrl || null,
+    url: recipe.url || '',
+    creator: {
+      id: recipe.creator?.id || '',
+      username: recipe.creator?.username || '',
+      avatarUrl: recipe.creator?.avatarUrl || null
+    }
+  };
+  
   const handleAddToShoppingList = async () => {
     if (!user) return;
     
     try {
       console.log('Adding to shopping list:', {
         userId: user.id,
-        recipeId: recipe.id,
-        ingredients: recipe.recipeMetadata?.ingredients,
+        recipeId: enrichedRecipe.id,
+        ingredients: enrichedRecipe.recipeMetadata?.ingredients,
         hasVariation: !!selectedVariation
       });
 
-      const items = recipe.recipeMetadata?.ingredients.map(ingredient => ({
+      const items = enrichedRecipe.recipeMetadata?.ingredients.map(ingredient => ({
         ingredient,
-        recipe_id: recipe.id,
+        recipe_id: enrichedRecipe.id,
         variation_id: selectedVariation?.id,
         is_substitution: false,
         notes: selectedVariation ? `From ${selectedVariation.variationType.toLowerCase()} variation` : undefined
@@ -43,7 +55,7 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
 
       // If we have a variation, add any substituted ingredients
       if (selectedVariation) {
-        const originalIngredients = new Set(recipe.recipeMetadata?.ingredients || []);
+        const originalIngredients = new Set(enrichedRecipe.recipeMetadata?.ingredients || []);
         const variationIngredients = new Set(selectedVariation.ingredients);
 
         // Add new ingredients from variation as substitutions
@@ -52,7 +64,7 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
           .forEach(ingredient => {
             items.push({
               ingredient,
-              recipe_id: recipe.id,
+              recipe_id: enrichedRecipe.id,
               variation_id: selectedVariation.id,
               is_substitution: true,
               notes: `Added in ${selectedVariation.variationType.toLowerCase()} variation`
@@ -81,17 +93,17 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
   
   const handleChatPress = () => {
     console.log('Opening chat for recipe:', {
-      recipeId: recipe.id,
-      title: recipe.title,
-      hasMetadata: !!recipe.recipeMetadata
+      recipeId: enrichedRecipe.id,
+      title: enrichedRecipe.title,
+      hasMetadata: !!enrichedRecipe.recipeMetadata
     });
     setIsChatVisible(true);
   };
 
   const handleVariationCreated = (variation: RecipeVariation) => {
     console.log('Variation created for recipe:', {
-      recipeId: recipe.id,
-      title: recipe.title,
+      recipeId: enrichedRecipe.id,
+      title: enrichedRecipe.title,
       variationId: variation.id,
       variationType: variation.variationType
     });
@@ -104,12 +116,13 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
   };
 
   console.log('Rendering RecipeDetails:', {
-    recipeId: recipe.id,
-    title: recipe.title,
+    recipeId: enrichedRecipe.id,
+    title: enrichedRecipe.title,
     hasUser: !!user,
     userId: user?.id,
-    hasMetadata: !!recipe.recipeMetadata,
-    ingredientsCount: recipe.recipeMetadata?.ingredients.length
+    hasMetadata: !!enrichedRecipe.recipeMetadata,
+    ingredientsCount: enrichedRecipe.recipeMetadata?.ingredients.length,
+    thumbnailUrl: enrichedRecipe.thumbnailUrl // Log thumbnail URL for debugging
   });
 
   return (
@@ -156,7 +169,7 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
 
                 <TouchableOpacity className="flex-row items-center bg-gray-100 px-4 py-2 rounded-full">
                   <SaveButton 
-                    videoId={recipe.id} 
+                    videoId={enrichedRecipe.id} 
                     userId={user.id} 
                     size={20}
                   />
@@ -197,21 +210,21 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
 
           <View className="mb-6">
             <Text className="text-xl font-bold mb-3">Ingredients</Text>
-            {(selectedVariation?.ingredients || recipe.recipeMetadata?.ingredients || []).map((ingredient, index) => (
+            {(selectedVariation?.ingredients || enrichedRecipe.recipeMetadata?.ingredients || []).map((ingredient, index) => (
               <Text key={index} className="text-gray-700 mb-1">• {ingredient}</Text>
             ))}
           </View>
 
           <View className="mb-6">
             <Text className="text-xl font-bold mb-3">Equipment Needed</Text>
-            {(selectedVariation?.equipment || recipe.recipeMetadata?.equipment || []).map((item, index) => (
+            {(selectedVariation?.equipment || enrichedRecipe.recipeMetadata?.equipment || []).map((item, index) => (
               <Text key={index} className="text-gray-700 mb-1">• {item}</Text>
             ))}
           </View>
 
           <View>
             <Text className="text-xl font-bold mb-3">Steps</Text>
-            {(selectedVariation?.steps || recipe.recipeMetadata?.steps || []).map((step, index) => (
+            {(selectedVariation?.steps || enrichedRecipe.recipeMetadata?.steps || []).map((step, index) => (
               <View key={index} className="mb-4">
                 <Text className="text-lg font-semibold mb-2">{index + 1}.</Text>
                 <Text className="text-gray-700">{step.description}</Text>
@@ -223,7 +236,7 @@ export function RecipeDetails({ isVisible, onClose, recipe }: RecipeDetailsProps
         <RecipeChat 
           isVisible={isChatVisible}
           onClose={() => setIsChatVisible(false)}
-          recipe={recipe}
+          recipe={enrichedRecipe}
           onVariationCreated={handleVariationCreated}
         />
       </View>

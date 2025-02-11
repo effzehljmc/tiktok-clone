@@ -36,16 +36,18 @@ export default function ShoppingListScreen() {
 
   if (!user) {
     return (
-      <View style={styles.centerContainer}>
-        <Ionicons name="cart-outline" size={48} color={COLORS.whiteAlpha30} />
-        <Text style={styles.emptyTitle}>Sign in to view your shopping list</Text>
-        <TouchableOpacity 
-          style={styles.signInButton}
-          onPress={() => router.push('/(auth)')}
-        >
-          <Text style={styles.signInButtonText}>Sign In</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.centerContainer}>
+          <Ionicons name="cart-outline" size={48} color={COLORS.whiteAlpha30} />
+          <Text style={styles.emptyTitle}>Sign in to view your shopping list</Text>
+          <TouchableOpacity 
+            style={styles.signInButton}
+            onPress={() => router.push('/(auth)')}
+          >
+            <Text style={styles.signInButtonText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -60,7 +62,7 @@ export default function ShoppingListScreen() {
   }, {} as Record<string, typeof items>);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <LinearGradient
         colors={[COLORS.surfaceLight, COLORS.background]}
         style={styles.container}
@@ -104,7 +106,11 @@ export default function ShoppingListScreen() {
           </View>
         ) : (
           <>
-            <ScrollView style={styles.scrollView}>
+            <ScrollView 
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
               {Object.entries(groupedItems).map(([recipeName, recipeItems]) => (
                 <View key={recipeName} style={styles.recipeSection}>
                   <Text style={styles.recipeName}>
@@ -122,7 +128,7 @@ export default function ShoppingListScreen() {
                             updates: { 
                               quantity: updatedItem.quantity,
                               unit: updatedItem.unit 
-                            } 
+                            }
                           })
                         }
                         onDelete={deleteItem}
@@ -131,20 +137,30 @@ export default function ShoppingListScreen() {
                   </View>
                 </View>
               ))}
-            </ScrollView>
 
-            {/* Bottom Actions */}
-            {items.some(item => item.is_checked) && (
-              <View style={styles.bottomActions}>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => deleteCheckedItems()}
-                >
-                  <Ionicons name="trash-outline" size={20} color={COLORS.white} />
-                  <Text style={styles.deleteButtonText}>Remove Checked Items</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              {/* Bottom Actions */}
+              {items.some(item => item.is_checked) && (
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => deleteCheckedItems()}
+                  >
+                    <LinearGradient
+                      colors={['#ef4444', '#dc2626']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.deleteButtonGradient}
+                    >
+                      <Ionicons name="trash-outline" size={20} color={COLORS.white} />
+                      <Text style={styles.deleteButtonText}>Remove Checked Items</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Bottom spacer */}
+              <View style={{ height: 50 }} />
+            </ScrollView>
           </>
         )}
       </LinearGradient>
@@ -194,6 +210,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 16,
+  },
   recipeSection: {
     marginBottom: 24,
   },
@@ -210,20 +229,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: COLORS.whiteAlpha10,
   },
-  bottomActions: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.whiteAlpha10,
-    backgroundColor: COLORS.cardBackground,
+  buttonContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   deleteButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  deleteButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.danger,
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    borderRadius: 12,
     gap: 8,
   },
   deleteButtonText: {
@@ -257,11 +278,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   signInButton: {
+    marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
     backgroundColor: COLORS.primary,
     borderRadius: 24,
-    marginTop: 16,
   },
   signInButtonText: {
     color: COLORS.white,

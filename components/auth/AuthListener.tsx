@@ -23,45 +23,58 @@ export function AuthListener() {
       lastEvent = event;
       lastUserId = session?.user?.id || null;
 
-      if (event === 'SIGNED_IN' && session?.user.email_confirmed_at) {
+      if (event === 'SIGNED_IN') {
         console.log('Processing SIGNED_IN event:', {
-          userId: session.user.id,
-          email: session.user.email,
-          emailConfirmed: session.user.email_confirmed_at
+          userId: session?.user.id,
+          email: session?.user.email,
+          emailConfirmed: session?.user.email_confirmed_at
         });
 
-        try {
-          const userData = await getUser(session.user.id);
-          console.log('Fetched user data:', {
-            success: !!userData,
-            userId: userData?.id,
-            email: userData?.email,
-            timestamp: new Date().toISOString()
-          });
+        // Check if this is a new email confirmation
+        if (session?.user.email_confirmed_at && 
+            (!lastEvent || lastEvent === 'INITIAL_SESSION')) {
+          // Show confirmation success page
+          router.replace('/confirmation-success');
+          return;
+        }
 
-          if (userData) {
-            console.log('Navigating to tabs with user:', {
-              id: userData.id,
-              event,
-              lastEvent,
+        if (session?.user.email_confirmed_at) {
+          try {
+            const userData = await getUser(session.user.id);
+            console.log('Fetched user data:', {
+              success: !!userData,
+              userId: userData?.id,
+              email: userData?.email,
               timestamp: new Date().toISOString()
             });
-            router.replace('/(tabs)');
-          } else {
-            console.log('No user data found, staying on auth screen:', {
-              sessionUserId: session.user.id,
+
+            if (userData) {
+              console.log('Navigating to tabs with user:', {
+                id: userData.id,
+                event,
+                lastEvent,
+                timestamp: new Date().toISOString()
+              });
+              router.replace('/(tabs)');
+            } else {
+              console.log('No user data found, staying on auth screen:', {
+                sessionUserId: session.user.id,
+                event,
+                lastEvent
+              });
+              router.replace('/(auth)');
+            }
+          } catch (error) {
+            console.error('Error fetching user data:', {
+              error,
+              userId: session.user.id,
               event,
               lastEvent
             });
             router.replace('/(auth)');
           }
-        } catch (error) {
-          console.error('Error fetching user data:', {
-            error,
-            userId: session.user.id,
-            event,
-            lastEvent
-          });
+        } else {
+          // Email not confirmed yet
           router.replace('/(auth)');
         }
       } else if (event === 'SIGNED_OUT') {
@@ -75,11 +88,6 @@ export function AuthListener() {
     });
 
     return () => {
-      console.log('Cleaning up auth listener:', {
-        lastEvent,
-        lastUserId,
-        timestamp: new Date().toISOString()
-      });
       authListener.subscription.unsubscribe();
     };
   }, [getUser]);

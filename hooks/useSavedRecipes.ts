@@ -70,32 +70,32 @@ export function useSavedRecipes(userId: string) {
         savedAt: new Date(item.saved_at),
         video: item.video ? {
           id: item.video.id,
-          title: item.video.title,
-          description: item.video.description,
-          url: item.video.video_url,
-          thumbnailUrl: item.video.thumbnail_url,
-          duration: item.video.duration,
-          viewsCount: item.video.views_count,
-          likesCount: item.video.likes_count,
-          commentsCount: item.video.comments_count,
-          status: item.video.status,
-          isPrivate: item.video.is_private,
+          title: item.video.title || null,
+          description: item.video.description || null,
+          url: item.video.video_url || '',
+          thumbnailUrl: item.video.thumbnail_url || null,
+          duration: item.video.duration || null,
+          viewsCount: item.video.views_count || 0,
+          likesCount: item.video.likes_count || 0,
+          commentsCount: item.video.comments_count || 0,
+          status: item.video.status || 'PUBLISHED',
+          isPrivate: item.video.is_private || false,
           creator: item.video.creator ? {
-            id: item.video.creator.id,
-            username: item.video.creator.username,
-            avatarUrl: item.video.creator.image
+            id: item.video.creator.id || '',
+            username: item.video.creator.username || '',
+            avatarUrl: item.video.creator.image || null
           } : null,
           recipeMetadata: item.video.recipe_metadata ? {
             id: item.video.recipe_metadata.id,
-            cookingTime: item.video.recipe_metadata.cooking_time,
-            difficulty: item.video.recipe_metadata.difficulty,
-            cuisine: item.video.recipe_metadata.cuisine,
-            servings: item.video.recipe_metadata.servings,
-            calories: item.video.recipe_metadata.calories,
-            equipment: item.video.recipe_metadata.equipment,
-            dietaryTags: item.video.recipe_metadata.dietary_tags,
-            ingredients: item.video.recipe_metadata.ingredients,
-            steps: item.video.recipe_metadata.steps
+            cookingTime: item.video.recipe_metadata.cooking_time || 0,
+            difficulty: item.video.recipe_metadata.difficulty || 'BEGINNER',
+            cuisine: item.video.recipe_metadata.cuisine || '',
+            servings: item.video.recipe_metadata.servings || 1,
+            calories: item.video.recipe_metadata.calories || null,
+            equipment: item.video.recipe_metadata.equipment || [],
+            dietaryTags: item.video.recipe_metadata.dietary_tags || [],
+            ingredients: item.video.recipe_metadata.ingredients || [],
+            steps: item.video.recipe_metadata.steps || []
           } : null
         } : null
       }));

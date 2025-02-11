@@ -55,7 +55,12 @@ export function LikeButton({
   };
 
   return (
-    <Pressable onPress={handlePress} style={styles.container}>
+    <Pressable 
+      onPress={handlePress} 
+      style={styles.container}
+      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      pressRetentionOffset={{ top: 20, left: 20, right: 20, bottom: 20 }}
+    >
       <AnimatedIcon
         name={isLiked ? 'heart' : 'heart-outline'}
         size={size}
@@ -69,5 +74,9 @@ export function LikeButton({
 const styles = StyleSheet.create({
   container: {
     padding: 8,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

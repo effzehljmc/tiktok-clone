@@ -18,20 +18,32 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
   useEffect(() => {
     if (isExpanded) {
       console.log('Opening expanded recipe:', {
-        id: recipe.id,
-        title: recipe.title,
-        hasMetadata: !!recipe.recipeMetadata,
-        metadata: recipe.recipeMetadata
+        id: recipe?.id,
+        title: recipe?.title,
+        hasMetadata: !!recipe?.recipeMetadata,
+        metadata: recipe?.recipeMetadata,
+        thumbnailUrl: recipe?.thumbnailUrl // Log for debugging
       });
     }
   }, [isExpanded, recipe]);
 
+  // Early return if recipe is undefined
+  if (!recipe) {
+    return (
+      <View className="mb-4 rounded-lg overflow-hidden bg-white shadow">
+        <View className="w-full h-48 bg-gray-200 items-center justify-center">
+          <Text className="text-gray-400">Recipe not available</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <>
       <View className="mb-4 rounded-lg overflow-hidden bg-white shadow">
-        {recipe.thumbnailUrl ? (
+        {recipe?.thumbnailUrl ? (
           <Image
-            source={recipe.thumbnailUrl}
+            source={{ uri: recipe.thumbnailUrl }}
             className="w-full h-48"
             contentFit="cover"
             transition={200}
@@ -45,10 +57,10 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
         <View className="p-4">
           <View className="flex-row justify-between items-start">
             <Text className="text-lg font-semibold flex-1 mr-2" numberOfLines={2}>
-              {recipe.title}
+              {recipe?.title || 'Untitled Recipe'}
             </Text>
             <View className="flex-row items-center gap-2">
-              {user && (
+              {user && recipe?.id && (
                 <SaveButton videoId={recipe.id} userId={user.id} />
               )}
               <TouchableOpacity 
@@ -60,7 +72,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
             </View>
           </View>
           
-          {recipe.description && (
+          {recipe?.description && (
             <Text className="text-gray-600 mt-1" numberOfLines={2}>
               {recipe.description}
             </Text>
@@ -68,11 +80,11 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
           
           <View className="flex-row mt-2 items-center">
             <Text className="text-gray-500 text-sm">
-              {recipe.viewsCount} views
+              {recipe?.viewsCount || 0} views
             </Text>
             <View className="w-1 h-1 rounded-full bg-gray-300 mx-2" />
             <Text className="text-gray-500 text-sm">
-              {recipe.likesCount} likes
+              {recipe?.likesCount || 0} likes
             </Text>
           </View>
         </View>

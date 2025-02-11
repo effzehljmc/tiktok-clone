@@ -10,6 +10,7 @@ import { TouchableOpacity } from 'react-native';
 import SearchOverlay from '@/components/search-overlay';
 import { useVideos } from '@/hooks/useVideos';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -51,6 +52,15 @@ function RecipeTab() {
 export default function FeedScreen() {
   const [currentTab, setCurrentTab] = useState('ForYou');
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const insets = useSafeAreaInsets();
+
+  // Zusätzliche Padding für iOS 18
+  const extraTopPadding = Platform.OS === 'ios' && parseInt(Platform.Version, 10) >= 18 ? 10 : 0;
+
+  const safeAreaStyle = {
+    paddingTop: insets.top + extraTopPadding,
+    paddingBottom: insets.bottom,
+  };
 
   useEffect(() => {
     // Plattform-spezifische Statusbar-Konfiguration
@@ -79,8 +89,12 @@ export default function FeedScreen() {
   if (shouldUseFallbackNavigation) {
     return (
       <View style={{ flex: 1, backgroundColor: 'black' }}>
-        <SafeAreaView style={styles.tabContainer} edges={['bottom', 'left', 'right']}>
-          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        <SafeAreaView style={[styles.tabContainer, safeAreaStyle]} edges={['bottom', 'left', 'right']}>
+          {Platform.OS === 'ios' && parseInt(Platform.Version, 10) >= 18 ? (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.8)' }]} />
+          ) : (
+            <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+          )}
           <View style={styles.customTabBar}>
             <TouchableOpacity 
               style={[styles.customTab, currentTab === 'ForYou' && styles.activeTab]}
@@ -112,8 +126,12 @@ export default function FeedScreen() {
   // Original Tab Navigator für iOS 17 und darunter
   return (
     <View style={{ flex: 1, backgroundColor: 'black' }}>
-      <SafeAreaView style={styles.tabContainer} edges={['bottom', 'left', 'right']}>
-        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={[styles.tabContainer, safeAreaStyle]} edges={['bottom', 'left', 'right']}>
+        {Platform.OS === 'ios' && parseInt(Platform.Version, 10) >= 18 ? (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.8)' }]} />
+        ) : (
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        )}
         {currentTab === 'ForYou' && (
           <TouchableOpacity 
             style={styles.searchButton}
