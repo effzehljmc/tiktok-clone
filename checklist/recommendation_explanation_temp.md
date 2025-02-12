@@ -136,7 +136,7 @@ begin
       'type', 'engagement',
       'score', p_engagement_score,
       'description', format(
-        'Based on your viewing history (%.0f%% of total score)',
+        'Based on your viewing history',
         70.0  -- Expose the actual weight
       ),
       'i18n_key', 'recommendation.factors.engagement'
@@ -157,7 +157,7 @@ begin
   select into main_reason
     case
       when p_preference_score >= 0.8 then 
-        format('High match with your preferences (%.0f%% preference score)', p_preference_score * 100)
+        format('High match with your preferences)', p_preference_score * 100)
       when p_engagement_score >= 0.7 then 
         'Similar to recipes you enjoy'
       else 'Recommended based on your profile'
@@ -428,4 +428,88 @@ export default {
 4. Durch Analytics und Monitoring können wir die Effektivität der Erklärungen messen.
 
 Auf diese Weise bieten wir Nutzern maximale Transparenz über die Empfehlungen, während wir Performance und UX im Auge behalten.
+
+## User Feedback System
+
+### Implementation Status: ✅ Completed
+
+The feedback system allows users to actively participate in improving their recommendations by providing explicit feedback on recommended recipes.
+
+### Features
+
+1. **Interactive Feedback Options**
+   - "More like this" button to boost similar content
+   - "Not for me" button to filter out unwanted content
+   - Accessible through the recommendation explanation modal
+
+2. **Real-time Updates**
+   - Immediate UI feedback on user interactions
+   - Smooth transitions when removing "not for me" content
+   - Automatic refresh of recommendations list
+
+3. **Score Adjustments**
+   - Positive feedback ("more like this")
+     - Engagement score boosted by 20%
+     - Content similarity score boosted by 20%
+   - Negative feedback ("not for me")
+     - Engagement score reduced by 50%
+     - Content similarity score reduced by 50%
+     - Content filtered from future recommendations
+
+4. **Database Integration**
+   - Feedback stored in `recommendation_feedback` table
+   - One feedback entry per video-user combination
+   - Automatic score updates via database functions
+   - Row-level security for user data protection
+
+5. **Performance Considerations**
+   - Optimized database indexes for quick feedback lookups
+   - Efficient filtering of rejected content in recommendations query
+   - Smooth UI transitions with delayed updates
+
+### Technical Implementation
+
+1. **Database Structure**
+   ```sql
+   create table recommendation_feedback (
+       id uuid default uuid_generate_v4() primary key,
+       user_id uuid not null references auth.users(id),
+       video_id uuid not null references videos(id),
+       feedback_type text not null check (feedback_type in ('more_like_this', 'not_for_me')),
+       created_at timestamptz not null default now(),
+       updated_at timestamptz not null default now()
+   );
+   ```
+
+2. **Score Adjustment Function**
+   ```sql
+   create function handle_recommendation_feedback(
+       p_video_id uuid,
+       p_feedback_type text
+   ) returns void
+   ```
+
+3. **UI Components**
+   - Feedback buttons in recommendation explanation modal
+   - Loading states during submission
+   - Error handling with user-friendly messages
+   - Smooth transitions for content removal
+
+4. **Analytics Integration**
+   - Tracking of feedback interactions
+   - Monitoring of recommendation quality
+   - User engagement metrics
+
+### Future Enhancements
+
+1. **Planned Improvements**
+   - [ ] Enhanced feedback categories beyond binary choices
+   - [ ] Machine learning integration for better score adjustments
+   - [ ] Batch feedback processing for multiple items
+   - [ ] Advanced analytics dashboard for feedback patterns
+
+2. **Integration with Other Features**
+   - [ ] Voice command support for feedback
+   - [ ] Integration with recipe variations system
+   - [ ] Multi-language feedback support
 

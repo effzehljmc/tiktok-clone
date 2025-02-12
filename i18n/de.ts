@@ -7,7 +7,7 @@ export default {
         medium: 'Passt teilweise zu deinen Ernährungspräferenzen',
         low: 'Passt weniger zu deinen Ernährungspräferenzen',
       },
-      engagement: 'Basierend auf deinem Sehverhalten ({{weight}} Punkte)',
+      engagement: 'Basierend auf deinem Sehverhalten',
       ingredient: 'Enthält keine Zutaten, die du nicht magst',
       cuisine: 'Passt zu deinem Interesse an {{cuisine}}-Küche',
     },

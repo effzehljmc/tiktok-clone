@@ -7,7 +7,7 @@ export default {
         medium: 'Partially matches your dietary preferences',
         low: 'Less aligned with your dietary preferences',
       },
-      engagement: 'Based on your viewing behavior ({{weight}} points)',
+      engagement: 'Based on your viewing behavior',
       ingredient: 'Contains no ingredients you dislike',
       cuisine: 'Matches your interest in {{cuisine}} cuisine',
     },

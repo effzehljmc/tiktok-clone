@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Share } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { ShoppingListItem } from '@/components/shopping/ShoppingListItem';
@@ -33,6 +33,28 @@ export default function ShoppingListScreen() {
     deleteItem,
     deleteCheckedItems,
   } = useShoppingList(user?.id || '');
+
+  const handleShare = async () => {
+    try {
+      // Format shopping list items for sharing
+      const formattedList = Object.entries(groupedItems)
+        .map(([recipeName, recipeItems]) => {
+          const header = recipeName === 'Other Items' ? recipeName : `From: ${recipeName}`;
+          const ingredients = recipeItems
+            .map(item => `• ${item.quantity || ''} ${item.ingredient}${item.unit ? ` ${item.unit}` : ''}${item.notes ? ` (${item.notes})` : ''}`)
+            .join('\n');
+          return `${header}\n${ingredients}`;
+        })
+        .join('\n\n');
+
+      await Share.share({
+        message: `My Shopping List:\n\n${formattedList}`,
+        title: 'Shopping List'
+      });
+    } catch (error) {
+      console.error('Error sharing shopping list:', error);
+    }
+  };
 
   if (!user) {
     return (
@@ -73,15 +95,9 @@ export default function ShoppingListScreen() {
           <View style={styles.headerButtons}>
             <TouchableOpacity 
               style={styles.iconButton}
-              onPress={() => {/* Add share functionality */}}
+              onPress={handleShare}
             >
               <Ionicons name="share-outline" size={22} color={COLORS.whiteAlpha90} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.iconButton}
-              onPress={() => {/* Add new item */}}
-            >
-              <Ionicons name="add" size={22} color={COLORS.whiteAlpha90} />
             </TouchableOpacity>
           </View>
         </View>

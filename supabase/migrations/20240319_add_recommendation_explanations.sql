@@ -101,7 +101,7 @@ begin
       'type', 'engagement',
       'score', p_engagement_score,
       'description', format(
-        'Based on your viewing history (%s%% of total score)',
+        'Based on your viewing history',
         round(70.0)  -- Expose the actual weight
       ),
       'i18n_key', 'recommendation.factors.engagement',
@@ -141,11 +141,10 @@ begin
   select into main_reason
     case
       when p_preference_score >= 0.8 then 
-        format('High match with your preferences (%s%% match)', round(p_preference_score * 100))
+        'High match with your preferences'
       when p_engagement_score >= 0.7 then 
-        format('Similar to recipes you enjoy (%s%% engagement)', round(p_engagement_score * 100))
-      else 
-        format('Recommended based on your profile (%s%% match)', round(p_total_score * 100))
+        'Similar to recipes you enjoy'
+      else 'Recommended based on your profile'
     end;
 
   -- Build final explanation with detailed insights
@@ -156,16 +155,14 @@ begin
     case
       when array_length(matching_diet_tags, 1) > 0 then
         format(
-          'This recipe matches your %s preferences and has a %s%% overall match score. Based on your viewing history and preferences, we think you''ll enjoy this %s recipe.',
+          'This recipe matches your %s preferences. Based on your viewing history and preferences, we think you''ll enjoy this %s recipe.',
           array_to_string(matching_diet_tags, ', '),
-          round(p_total_score * 100),
           p_cuisine
         )
       else
         format(
-          'Based on your viewing history, we think you''ll enjoy this %s recipe. It has a %s%% match with your preferences.',
-          p_cuisine,
-          round(p_total_score * 100)
+          'Based on your viewing history, we think you''ll enjoy this %s recipe.',
+          p_cuisine
         )
     end
   );

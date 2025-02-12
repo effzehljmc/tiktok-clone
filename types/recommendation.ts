@@ -53,6 +53,8 @@ export interface RecommendedVideo extends Video {
   };
   /** Explanation for why this video was recommended */
   explanation: RecommendationExplanation;
+  /** User's feedback on this recommendation */
+  user_feedback?: 'more_like_this' | 'not_for_me';
 }
 
 /**
